@@ -30,11 +30,12 @@ import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString      as BS
 import qualified Data.ByteString.Builder as BS
 import qualified Data.ByteString.Builder.Extra as BS
-import Data.Map (Map)
+import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Monoid
 import Data.Typeable
-import Control.Exception hiding (bracket, throw)
+import Data.List (foldl')
+import Control.Exception hiding (bracket, throw, catch)
 import qualified Network.Transport.Abstract as NT
 import qualified Network.Transport as NT (EventErrorCode(EventConnectionLost, EventEndPointFailed, EventTransportFailed))
 import System.Random (StdGen, random)
@@ -68,8 +69,8 @@ newtype ChannelIn m = ChannelIn (Channel.ChannelT m (Maybe BS.ByteString))
 
 newtype ChannelOut m = ChannelOut (NT.Connection m)
 
-startNode :: ( Mockable SharedAtomic m, Mockable Fork m
-             , Mockable Channel.Channel m, Mockable Throw m )
+startNode :: ( Mockable SharedAtomic m, Mockable Fork m, Mockable Bracket m
+             , Mockable Channel.Channel m, Mockable Throw m, Mockable Catch m )
           => NT.Transport m
           -> StdGen
           -> (NodeId -> ChannelIn m -> m ())
@@ -78,7 +79,8 @@ startNode :: ( Mockable SharedAtomic m, Mockable Fork m
 startNode transport prng handlerIn handlerOut = do
     Right endpoint <- NT.newEndPoint transport --TODO: error handling
     incomingVar    <- newSharedAtomic (prng, Map.empty)
-    tid  <- fork (nodeDispatcher endpoint incomingVar handlerIn handlerOut)
+    finishedVar    <- newSharedAtomic []
+    tid  <- fork (nodeDispatcher endpoint incomingVar finishedVar handlerIn handlerOut)
     --TODO: exceptions in the forkIO
     return Node {
       nodeEndPoint         = endpoint,
@@ -129,135 +131,175 @@ data ConnectionState m =
 -- to various handlers.
 --
 nodeDispatcher :: forall m .
-                  ( Mockable SharedAtomic m, Mockable Fork m
-                  , Mockable Channel.Channel m, Mockable Throw m )
+                  ( Mockable SharedAtomic m, Mockable Fork m, Mockable Bracket m
+                  , Mockable Channel.Channel m, Mockable Throw m
+                  , Mockable Catch m )
                => NT.EndPoint m
                -> SharedAtomicT m (StdGen, Map Nonce (ThreadId m, ChannelIn m))
+               -> SharedAtomicT m ([(NT.ConnectionId, Maybe SomeException)])
                -> (NodeId -> ChannelIn m -> m ())
                -> (NodeId -> ChannelIn m -> ChannelOut m -> m ())
                -> m ()
-nodeDispatcher endpoint incomingVar handlerIn handlerInOut =
+nodeDispatcher endpoint incomingVar finished handlerIn handlerInOut =
     loop Map.empty
   where
-    loop :: DispatcherState m -> m ()
---    loop state
---      | overloaded = do ... TODO
 
+    -- | Signal that a thread handling a given ConnectionId is finished.
+    --   It's very important that this is run to completion for every spawned
+    --   thread, else the DispatcherState will never forget the entry for
+    --   this ConnectionId.
+    --
+    --   FIXME must be sure that this is uninterruptible. That depends upon the
+    --   semantics of the chosen SharedAtomic! If an MVar is used then it
+    --   should be OK; docs in Control.Exception say that a takeMVar is
+    --   uninterruptible if the MVar is full, putMVar uninterruptible if the
+    --   MVar is empty, so a modifyMVar should be uninterruptible.
+    signalFinished :: (NT.ConnectionId, Maybe SomeException) -> m ()
+    signalFinished outcome = modifySharedAtomic finished (\lst -> pure (outcome : lst, ()))
+
+    -- | Augment some m term so that it always reports its ConnectionId when
+    --   finished, along with the exception if one was raised. We catch all
+    --   exceptions but it's rethrown.
+    reportConnidAndException :: NT.ConnectionId -> m () -> m ()
+    reportConnidAndException connid action = normal `catch` exceptional
+        where
+        normal :: m ()
+        normal = do
+            _ <- action
+            signalFinished (connid, Nothing)
+        exceptional :: SomeException -> m ()
+        exceptional e = do
+            signalFinished (connid, Just e)
+            throw e
+
+    -- Take the dead threads from the shared atomic and release them all from
+    -- the map.
+    -- TBD use the reported exceptions to inform the dispatcher somehow?
+    -- If a lot of threads are giving exceptions, should we change dispatcher
+    -- behavior?
+    clearDeadThreads :: DispatcherState m -> m (DispatcherState m)
+    clearDeadThreads state = do
+        finished <- modifySharedAtomic finished (\lst -> pure ([], lst))
+        pure $ foldl' (\state (connid, _) -> Map.delete connid state) state finished
+
+    loop :: DispatcherState m -> m ()
     loop !state = do
+      !state <- clearDeadThreads state
       event <- NT.receive endpoint
       case event of
 
-        NT.ConnectionOpened connid NT.ReliableOrdered peer ->
-          -- Just keep track of the new connection, nothing else
-          loop (Map.insert connid (ConnectionNew (NodeId peer)) state)
+          NT.ConnectionOpened connid NT.ReliableOrdered peer ->
+            -- Just keep track of the new connection, nothing else
+            loop (Map.insert connid (ConnectionNew (NodeId peer)) state)
 
-        -- receiving data for an existing connection (ie a multi-chunk message)
-        NT.Received connid chunks ->
-          case Map.lookup connid state of
-            Nothing ->
-              throw (InternalError "received data on unknown connection")
+          -- receiving data for an existing connection (ie a multi-chunk message)
+          NT.Received connid chunks ->
+            case Map.lookup connid state of
+              Nothing ->
+                throw (InternalError "received data on unknown connection")
 
-            -- TODO: need policy here on queue size
-            Just (ConnectionNew peer) ->
-             loop (Map.insert connid (ConnectionNewChunks peer chunks) state)
+              -- TODO: need policy here on queue size
+              Just (ConnectionNew peer) ->
+               loop (Map.insert connid (ConnectionNewChunks peer chunks) state)
 
-            -- fork a new thread with a new queue filled with the first data chunks
-            Just (ConnectionNewChunks peer@(NodeId peerEndpointAddr) chunks0) ->
-              case LBS.uncons (LBS.fromChunks (chunks0 ++ chunks)) of
-                Nothing -> loop state -- all empty, wait for more data
-                Just (w, ws)
-                  | w == controlHeaderCodeUnidirectional -> do
-                    chan <- Channel.newChannel
-                    mapM_ (Channel.writeChannel chan . Just) (LBS.toChunks ws)
-                    tid  <- fork (handlerIn peer (ChannelIn chan))
-                    loop (Map.insert connid (ConnectionReceiving tid chan) state)
+              -- fork a new thread with a new queue filled with the first data chunks
+              Just (ConnectionNewChunks peer@(NodeId peerEndpointAddr) chunks0) ->
+                case LBS.uncons (LBS.fromChunks (chunks0 ++ chunks)) of
+                  Nothing -> loop state -- all empty, wait for more data
+                  Just (w, ws)
+                    | w == controlHeaderCodeUnidirectional -> do
+                      chan <- Channel.newChannel
+                      mapM_ (Channel.writeChannel chan . Just) (LBS.toChunks ws)
+                      tid  <- fork $ reportConnidAndException connid (handlerIn peer (ChannelIn chan))
+                      loop (Map.insert connid (ConnectionReceiving tid chan) state)
 
-                  | w == controlHeaderCodeBidirectionalAck ||
-                    w == controlHeaderCodeBidirectionalSyn
-                  , LBS.length ws < 8 -> -- need more data
-                    loop (Map.insert connid (ConnectionNewChunks peer (chunks0 ++ chunks)) state)
+                    | w == controlHeaderCodeBidirectionalAck ||
+                      w == controlHeaderCodeBidirectionalSyn
+                    , LBS.length ws < 8 -> -- need more data
+                      loop (Map.insert connid (ConnectionNewChunks peer (chunks0 ++ chunks)) state)
 
-                  | w == controlHeaderCodeBidirectionalSyn
-                  , Right (ws',_,nonce) <- decodeOrFail ws -> do
-                    chan <- Channel.newChannel
-                    mapM_ (Channel.writeChannel chan . Just) (LBS.toChunks ws')
-                    tid <- fork $ do
-                      mconn <- NT.connect
-                                 endpoint
-                                 peerEndpointAddr
-                                 NT.ReliableOrdered
-                                 NT.ConnectHints{ connectTimeout = Nothing } --TODO use timeout
-                      case mconn of
-                        Left  err  -> throw err
-                        Right conn -> do
-                          NT.send conn [controlHeaderBidirectionalSyn nonce]
-                          handlerInOut peer (ChannelIn chan) (ChannelOut conn)
-                    loop (Map.insert connid (ConnectionReceiving tid chan) state)
-
-
-                  | w == controlHeaderCodeBidirectionalAck
-                  , Right (ws',_,nonce) <- decodeOrFail ws -> do
-                    (tid, ChannelIn chan) <- modifySharedAtomic incomingVar $ \(prng, expected) ->
-                      case Map.lookup nonce expected of
-                        Nothing -> throw (ProtocolError $ "unexpected ack nonce " ++ show nonce)
-                        Just info -> do
-                          let !expected' = Map.delete nonce expected
-                          return ((prng, expected'), info)
-                    mapM_ (Channel.writeChannel chan . Just) (LBS.toChunks ws')
-                    loop (Map.insert connid (ConnectionReceiving tid chan) state)
-
-                  | otherwise ->
-                      throw (ProtocolError $ "unexpected control header " ++ show w)
-
-            Just (ConnectionReceiving tid chan) -> do
-              mapM_ (Channel.writeChannel chan . Just) chunks
-              loop state
-
-            Just (ConnectionClosed tid) ->
-              throw (InternalError "received data on closed connection")
-
-        NT.ConnectionClosed connid ->
-          case Map.lookup connid state of
-            Nothing ->
-              throw (InternalError "closed unknown connection")
-
-            -- empty message
-            Just (ConnectionNew peer) -> do
-              chan <- Channel.newChannel
-              Channel.writeChannel chan Nothing
-              tid  <- fork (handlerIn peer (ChannelIn chan))
-              loop (Map.insert connid (ConnectionClosed tid) state)
-
-            -- small message
-            Just (ConnectionNewChunks peer chunks0) -> do
-              chan <- Channel.newChannel
-              mapM_ (Channel.writeChannel chan . Just) chunks0
-              Channel.writeChannel chan Nothing
-              tid  <- fork (handlerIn peer (ChannelIn chan))
-              loop (Map.insert connid (ConnectionClosed tid) state)
-
-            Just (ConnectionReceiving tid chan) -> do
-              Channel.writeChannel chan Nothing
-              loop (Map.insert connid (ConnectionClosed tid) state)
-
-            Just (ConnectionClosed tid) ->
-              throw (InternalError "closed a closed connection")
+                    | w == controlHeaderCodeBidirectionalSyn
+                    , Right (ws',_,nonce) <- decodeOrFail ws -> do
+                      chan <- Channel.newChannel
+                      mapM_ (Channel.writeChannel chan . Just) (LBS.toChunks ws')
+                      let action = do
+                              mconn <- NT.connect
+                                         endpoint
+                                         peerEndpointAddr
+                                         NT.ReliableOrdered
+                                         NT.ConnectHints{ connectTimeout = Nothing } --TODO use timeout
+                              case mconn of
+                                Left  err  -> throw err
+                                Right conn -> do
+                                  NT.send conn [controlHeaderBidirectionalSyn nonce]
+                                  handlerInOut peer (ChannelIn chan) (ChannelOut conn)
+                      tid <- fork $ reportConnidAndException connid action
+                      loop (Map.insert connid (ConnectionReceiving tid chan) state)
 
 
-        NT.EndPointClosed ->
-          --TODO: decide what to do with all active handlers
-          return ()
+                    | w == controlHeaderCodeBidirectionalAck
+                    , Right (ws',_,nonce) <- decodeOrFail ws -> do
+                      (tid, ChannelIn chan) <- modifySharedAtomic incomingVar $ \(prng, expected) ->
+                        case Map.lookup nonce expected of
+                          Nothing -> throw (ProtocolError $ "unexpected ack nonce " ++ show nonce)
+                          Just info -> do
+                            let !expected' = Map.delete nonce expected
+                            return ((prng, expected'), info)
+                      mapM_ (Channel.writeChannel chan . Just) (LBS.toChunks ws')
+                      loop (Map.insert connid (ConnectionReceiving tid chan) state)
 
-        NT.ErrorEvent (NT.TransportError (NT.EventErrorCode (NT.EventConnectionLost peer)) _msg) -> undefined
+                    | otherwise ->
+                        throw (ProtocolError $ "unexpected control header " ++ show w)
 
-        NT.ErrorEvent (NT.TransportError (NT.EventErrorCode NT.EventEndPointFailed)  msg) -> undefined
+              Just (ConnectionReceiving tid chan) -> do
+                mapM_ (Channel.writeChannel chan . Just) chunks
+                loop state
 
-        NT.ErrorEvent (NT.TransportError (NT.EventErrorCode NT.EventTransportFailed) msg) -> undefined
+              Just (ConnectionClosed tid) ->
+                throw (InternalError "received data on closed connection")
 
-        NT.ErrorEvent (NT.TransportError NT.UnsupportedEvent msg) -> undefined
+          NT.ConnectionClosed connid ->
+            case Map.lookup connid state of
+              Nothing ->
+                throw (InternalError "closed unknown connection")
 
-        NT.ConnectionOpened _ _ _ ->
-          throw (ProtocolError "unexpected connection reliability")
+              -- empty message
+              Just (ConnectionNew peer) -> do
+                chan <- Channel.newChannel
+                Channel.writeChannel chan Nothing
+                tid  <- fork $ reportConnidAndException connid (handlerIn peer (ChannelIn chan))
+                loop (Map.insert connid (ConnectionClosed tid) state)
+
+              -- small message
+              Just (ConnectionNewChunks peer chunks0) -> do
+                chan <- Channel.newChannel
+                mapM_ (Channel.writeChannel chan . Just) chunks0
+                Channel.writeChannel chan Nothing
+                tid  <- fork $ reportConnidAndException connid (handlerIn peer (ChannelIn chan))
+                loop (Map.insert connid (ConnectionClosed tid) state)
+
+              Just (ConnectionReceiving tid chan) -> do
+                Channel.writeChannel chan Nothing
+                loop (Map.insert connid (ConnectionClosed tid) state)
+
+              Just (ConnectionClosed tid) ->
+                throw (InternalError "closed a closed connection")
+
+
+          NT.EndPointClosed ->
+            --TODO: decide what to do with all active handlers
+            return ()
+
+          NT.ErrorEvent (NT.TransportError (NT.EventErrorCode (NT.EventConnectionLost peer)) _msg) -> undefined
+
+          NT.ErrorEvent (NT.TransportError (NT.EventErrorCode NT.EventEndPointFailed)  msg) -> undefined
+
+          NT.ErrorEvent (NT.TransportError (NT.EventErrorCode NT.EventTransportFailed) msg) -> undefined
+
+          NT.ErrorEvent (NT.TransportError NT.UnsupportedEvent msg) -> undefined
+
+          NT.ConnectionOpened _ _ _ ->
+            throw (ProtocolError "unexpected connection reliability")
 
 sendMsg :: forall m . ( Monad m ) => Node m -> NodeId -> LBS.ByteString -> m ()
 sendMsg Node{nodeEndPoint} (NodeId endpointaddr) msg = do
