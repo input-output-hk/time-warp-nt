@@ -15,7 +15,6 @@ import qualified Data.Set as S
 import qualified Data.ByteString.Char8 as B8
 import Node
 import qualified Network.Transport.TCP as TCP
-import qualified Network.Transport.InMemory as InMemory
 import Network.Transport.Concrete (concrete)
 import Network.Transport.Abstract (newEndPoint)
 import Network.Discovery.Abstract

@@ -13,7 +13,6 @@ import Data.Void (Void)
 import Data.Binary
 import Node
 import qualified Network.Transport.TCP as TCP
-import qualified Network.Transport.InMemory as InMemory
 import Network.Transport.Abstract (newEndPoint)
 import Network.Transport.Concrete (concrete)
 import System.Random
@@ -69,7 +68,6 @@ listeners id = [Listener (fromString "ping") pongWorker]
 
 main = runProduction $ do
 
-    --transport_ <- InMemory.createTransport
     Right transport_ <- liftIO $ TCP.createTransport ("127.0.0.1") ("10128") TCP.defaultTCPParameters
     let transport = concrete transport_
     Right endpoint1 <- newEndPoint transport
