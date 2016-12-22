@@ -10,6 +10,7 @@ import Mockable.Concurrent
 import Mockable.SharedAtomic
 import Mockable.Channel
 import Mockable.Exception
+import Mockable.Time
 import Control.Monad.Fix (MonadFix)
 import Control.Monad.IO.Class (MonadIO)
 import qualified Control.Exception as Exception
@@ -17,7 +18,10 @@ import qualified Control.Concurrent as Conc
 import qualified Control.Concurrent.MVar as Conc
 import qualified Control.Concurrent.STM as Conc
 import qualified Control.Concurrent.STM.TChan as Conc
+import qualified Data.Time.Clock as Time
 
+-- | An 'IO' with performant 'Mockable' instances intended to be used in
+--   production.
 newtype Production t = Production {
     runProduction :: IO t
   }
@@ -27,6 +31,15 @@ deriving instance Applicative Production
 deriving instance Monad Production
 deriving instance MonadIO Production
 deriving instance MonadFix Production
+
+instance HasTime Production where
+    type TimeAbsolute Production = Time.UTCTime
+    type TimeDelta Production = Time.NominalDiffTime
+    addTime = flip Time.addUTCTime
+    diffTime = Time.diffUTCTime
+
+instance Mockable GetCurrentTime Production where
+    liftMockable (GetCurrentTime) = Production $ Time.getCurrentTime
 
 type instance ThreadId Production = Conc.ThreadId
 
