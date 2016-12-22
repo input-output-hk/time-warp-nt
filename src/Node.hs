@@ -31,6 +31,13 @@ module Node (
     , nodeId
     , nodeEndPointAddress
 
+    , LL.DispatchPolicy
+    , LL.noDelayPolicy
+    , LL.uniformDelayPolicy
+    , LL.policyStatistics
+    , LL.policyConnectionStates
+    , LL.policyCurrentTime
+
     ) where
 
 import Control.Monad.Fix (MonadFix)
@@ -52,6 +59,7 @@ import Mockable.Concurrent
 import Mockable.Channel
 import Mockable.SharedAtomic
 import Mockable.Exception
+import Mockable.Time
 import GHC.Generics (Generic)
 
 data Node (m :: * -> *) = Node {
@@ -183,14 +191,16 @@ startNode
     :: forall m .
        ( Mockable Fork m, Mockable Throw m, Mockable Channel m
        , Mockable SharedAtomic m, Mockable Bracket m, Mockable Catch m
+       , Mockable Delay m, HasTime m, Mockable GetCurrentTime m
        , MonadFix m )
     => NT.EndPoint m
     -> StdGen
+    -> LL.DispatchPolicy m
     -> [Worker m]
     -> [Listener m]
     -> m (Node m)
-startNode endPoint prng workers listeners = do
-    rec { node <- LL.startNode endPoint prng (handlerIn node sendActions) (handlerInOut node)
+startNode endPoint prng policy workers listeners = do
+    rec { node <- LL.startNode endPoint prng policy (handlerIn node sendActions) (handlerInOut node)
         ; let sendActions = nodeSendActions node
         }
     tids <- sequence

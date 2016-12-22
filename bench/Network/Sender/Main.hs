@@ -26,7 +26,7 @@ import           Network.Transport.Concrete (concrete)
 import qualified Network.Transport.Abstract as NT
 import qualified Network.Transport.TCP      as TCP
 import           Node                       (Listener (..), ListenerAction (..), sendTo,
-                                             startNode, stopNode)
+                                             startNode, stopNode, noDelayPolicy)
 import           Node.Internal              (NodeId (..))
 import           SenderOptions              (Args (..), argsParser)
 import qualified Network.Transport.Abstract as NT
@@ -65,7 +65,7 @@ main = do
     usingLoggerName "sender" $ do
         Right endPoint <- NT.newEndPoint transport
         drones <- forM nodeIds (startDrone endPoint)
-        senderNode <- startNode endPoint prngNode
+        senderNode <- startNode endPoint prngNode noDelayPolicy
             -- TODO: is it good idea to start (recipients number * thread number) threads?
             (liftM2 (pingSender prngWork payloadBound delay)
                 tasksIds

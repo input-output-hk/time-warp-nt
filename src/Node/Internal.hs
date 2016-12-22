@@ -20,7 +20,18 @@ module Node.Internal (
     withOutChannel,
     withInOutChannel,
     writeChannel,
-    readChannel
+    readChannel,
+
+    Statistics(..),
+
+    Policy,
+    DispatchPolicy,
+    dispatchPolicy,
+    noDelayPolicy,
+    uniformDelayPolicy,
+    policyCurrentTime,
+    policyConnectionStates,
+    policyStatistics
   ) where
 
 import Data.Binary     as Bin
@@ -33,13 +44,23 @@ import qualified Data.Map.Strict as Map
 import Data.Monoid
 import Data.Typeable
 import Data.List (foldl')
+import Data.Functor.Identity (Identity(runIdentity))
+import Control.Applicative (Alternative)
+import Control.Monad (mzero, MonadPlus)
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans.Reader (ReaderT(runReaderT))
+import qualified Control.Monad.Trans.Reader as Reader
+import Control.Monad.Trans.State.Strict (StateT(runStateT))
+import qualified Control.Monad.Trans.State.Strict as State
+import Control.Monad.Trans.Maybe (MaybeT(runMaybeT))
 import Control.Exception hiding (bracket, throw, catch, finally)
 import qualified Network.Transport.Abstract as NT
-import qualified Network.Transport as NT (EventErrorCode(EventConnectionLost, EventEndPointFailed, EventTransportFailed))
-import System.Random (StdGen, random, Random)
+import qualified Network.Transport as NTT (EventErrorCode(..))
+import System.Random (StdGen, random, randomR, Random)
 import Mockable.Class
 import Mockable.Concurrent
 import Mockable.Exception
+import Mockable.Time
 import qualified Mockable.Channel as Channel
 import Mockable.SharedAtomic
 
@@ -90,23 +111,37 @@ instance Exception NodeException
 -- | Input from the wire. Nothing means there's no more to come.
 newtype ChannelIn m = ChannelIn (Channel.ChannelT m (Maybe BS.ByteString))
 
+channelInWrite
+    :: ( Mockable Channel.Channel m )
+    => ChannelIn m
+    -> [BS.ByteString]
+    -> m Int
+channelInWrite (ChannelIn chan) = go 0
+    where
+    go !n [] = pure n
+    go !n (bs : bss) = do
+        _ <- Channel.writeChannel chan (Just bs)
+        go (BS.length bs + n) bss
+
 -- | Output to the wire.
 newtype ChannelOut m = ChannelOut (NT.Connection m)
 
 -- | Bring up a 'Node' using a network transport.
 startNode :: ( Mockable SharedAtomic m, Mockable Fork m, Mockable Bracket m
-             , Mockable Channel.Channel m, Mockable Throw m, Mockable Catch m )
+             , Mockable Channel.Channel m, Mockable Throw m, Mockable Catch m
+             , HasTime m, Mockable GetCurrentTime m, Mockable Delay m )
           => NT.EndPoint m
           -> StdGen
+          -> DispatchPolicy m
           -> (NodeId -> ChannelIn m -> m ())
           -- ^ Handle incoming unidirectional connections.
           -> (NodeId -> ChannelIn m -> ChannelOut m -> m ())
           -- ^ Handle incoming bidirectional connections.
           -> m (Node m)
-startNode endPoint prng handlerIn handlerOut = do
+startNode endPoint prng policy handlerIn handlerOut = do
     sharedState <- newSharedAtomic (NodeState prng Map.empty [])
     tid <- fork $
-        nodeDispatcher endPoint sharedState handlerIn handlerOut
+        nodeDispatcher endPoint sharedState policy handlerIn handlerOut
     --TODO: exceptions in the forkIO
     --they should be raised in this thread.
     return Node {
@@ -125,7 +160,224 @@ stopNode Node {..} =
 
 -- | State which is local to the dispatcher, and need not be accessible to
 --   any other thread.
-type DispatcherState m = Map NT.ConnectionId (ConnectionState m)
+data DispatcherState m = DispatcherState {
+      dispatcherConnectionStates :: !(Map NT.ConnectionId (ConnectionState m))
+    , dispatcherStatistics :: !(Statistics m)
+    }
+
+-- | A bundle of statistics to be gathered by the dispatcher and used to inform
+--   a policy of backpressure.
+data Statistics (m :: * -> *) = Statistics {
+      statsTotalHandlers :: !Integer
+    , statsCompletedHandlers :: !Integer
+    , statsFailedHandlers :: !Integer
+    , statsBytesReceived :: !Integer
+    }
+
+initialStatistics :: Statistics m
+initialStatistics = Statistics {
+      statsTotalHandlers = 0
+    , statsCompletedHandlers = 0
+    , statsFailedHandlers = 0
+    , statsBytesReceived = 0
+    }
+
+-- | Derive the number of active handlers from a Statistics value.
+statsActiveHandlers :: Statistics m -> Integer
+statsActiveHandlers stats = total - (completed + failed)
+    where
+    total = statsTotalHandlers stats
+    completed = statsCompletedHandlers stats
+    failed = statsFailedHandlers stats
+
+-- TODO:
+-- we shall want to run the policy *after* an event, and inform the policy
+-- computation of the event, i.e. whether it was
+--   - received
+--   - opened
+--   - closed
+--   - error
+-- We should give the statistics as they stood before the request was answered,
+-- and in the case of received we'll also give the number of bytes received.
+--
+-- Would like for the policy to be able to determine, for instance, whether a
+-- new connection should be accepted or "dropped" (i.e. forgotten, so later
+-- data is immediately garbage collected).
+-- Oh no, we can't ignore new connections unless we deliver an error to the
+-- sender, for we want ordering. That's unless we give the ordering guarantee
+-- only within an established connection (so bidirectional connections are
+-- ordered).
+--
+-- Anyway, let's focus on what defensive policies we can actually implement
+-- now: i.e. delaying a receive. We can make a test in which many nodes harass
+-- a given node, and see whether the victim's memory usage remains bounded.
+-- What would such a policy look like? Some function of the number of active
+-- handlers?
+-- How about bytes per second input? We can compute the mean and maybe the
+-- standard deviation incrementally over all time, and we could also compute
+-- these over another window, say, the last n seconds. If we see that the last
+-- n seconds has a much higher mean and rather low standard deviation, we'll
+-- slow down. Slowing down will certainly lower the mean (maybe increase std.
+-- dev.) so the next iteration may act differently.
+-- - We *can* incrementally compute bytes / seconds
+-- - std. dev. doesn't really make sense, though, does it? n here is not the
+--   number of samples, it's number of seconds, and we only sample at random
+--   points (when an event is received).
+-- Ok so we treat each sample as bytes / seconds, i.e. the size of data
+-- received over the time since the last receive. Now we do have n as number of
+-- samples. Yeah, that's definitely what we want. 
+-- This can all be implemented as a special policy with no extra support from
+-- the dispatcher. It can be inferred from special state (parameter of the
+-- DispatchPolicy), absolute time parameter, and the StatisticsEvent
+-- (SEDataReceived).
+-- So we just have to pick a desired bytes/second and then the policy will
+-- adjust itself so it never exceeds that value. Delay by the amount of time
+-- such that it would cause the actual bytes/second to reach the desired, if
+-- a given number of bytes is received. Ah, so we also want to know stats about
+-- the number of bytes received, not just the rate.
+--
+-- Really though this is all silly because it still allows DoS attacks. All
+-- the attacker must do is connect and repeatedly send massive data. The
+-- victim will slow down and everybody will suffer. A good policy will slow
+-- down receiving only from the attacker's EndPoint, and probably reject new
+-- connection from it as well. These are two things just not possible in
+-- network-transport as it stands: rejecting new connections from
+-- an EndPoint, and delaying socket reads from an EndPoint.
+--
+-- So how to implement it? network-transport-tcp has one shared event queue,
+-- fed by the multiplexed tcp connections. It therefore does not make sense
+-- to add an extra parameter to 'receive'. Instead, we'd have some imperative
+-- style thing: 'delayFrom :: EndPoint -> EndPointAddress -> Int -> IO (IO ())'
+-- and 'rejectFrom :: EndPoint -> EndPointAddress -> IO (IO ())' where the
+-- 'IO's returned will unblock and unreject.
+--
+-- Doesn't make any sense really... network-transport isn't designed for this.
+-- We can't reject a request based on host because network-transport doesn't
+-- work like that. It's a tcp-specific thing. But then again that seems right.
+-- We wouldn't want to reject any incoming connection if using in-memory because
+-- it wouldn't make a difference, the attacker and victim have the same memory
+-- space. What we could do is have network-transport-tcp expose a host-based
+-- blacklist and traffic shaping api, and then have the policy depend upon the
+-- transport.
+
+-- | Events to inform dispatcher policy decisions. Closely related to
+--   network-transport events and connection states.
+data StatisticsEvent =
+
+      -- | Identifies the connection and the number of bytes received.
+      SEDataReceived !NT.ConnectionId !Int
+
+      -- | A new connection opened by a given peer address.
+    | SEConnectionOpened !NT.ConnectionId !NT.EndPointAddress
+
+      -- | A closed connection.
+    | SEConnectionClosed !NT.ConnectionId
+
+      -- | Something went wrong.
+    | SEErrorEvent !(NT.TransportError NT.EventErrorCode)
+
+sizeOfChunks :: ( Integral i ) => [BS.ByteString] -> i
+sizeOfChunks = fromIntegral . foldl' (\i bs -> i + BS.length bs) 0
+
+--
+--   TODO: will want more capabilities than to just delay all input.
+--   Should be able to selectively delay input from a given end point address
+--   or a given connection identifier. network-transport doesn't support that
+--   though.
+data DispatchPolicy (m :: * -> *) = forall s . DispatchPolicy {
+      policyState :: s
+    , policyTransition :: Policy s m (TimeDelta m)
+    }
+
+runDispatchPolicy
+    :: StatisticsEvent
+    -> DispatcherState m
+    -> TimeAbsolute m
+    -> DispatchPolicy m
+    -> (Maybe (TimeDelta m), DispatchPolicy m)
+runDispatchPolicy sevent state time (DispatchPolicy s policy) = (x, DispatchPolicy s' policy)
+    where
+    (x, s') = runPolicy s sevent state time policy
+
+-- | Give initial state and a policy to get a complete dispatch policy.
+dispatchPolicy :: s -> Policy s m (TimeDelta m) -> DispatchPolicy m
+dispatchPolicy = DispatchPolicy
+
+newtype Policy (s :: *) (m :: * -> *) (t :: *) = Policy {
+      unPolicy :: MaybeT (StateT s (ReaderT (StatisticsEvent, DispatcherState m, TimeAbsolute m) Identity)) t
+    }
+
+deriving instance Functor (Policy s m)
+deriving instance Applicative (Policy s m)
+deriving instance Monad (Policy s m)
+deriving instance Alternative (Policy s m)
+deriving instance MonadPlus (Policy s m)
+
+runPolicy
+    :: s
+    -> StatisticsEvent
+    -> DispatcherState m
+    -> TimeAbsolute m
+    -> Policy s m t
+    -> (Maybe t, s)
+runPolicy s sevent state time p =
+    runIdentity $
+    flip runReaderT (sevent, state, time) $
+    flip runStateT s $
+    runMaybeT $
+    unPolicy $ p
+
+getPolicyState :: Policy s m s
+getPolicyState = Policy . lift $ State.get
+
+putPolicyState :: s -> Policy s m ()
+putPolicyState = Policy . lift . State.put
+
+policyCurrentTime :: Policy s m (TimeAbsolute m)
+policyCurrentTime = Policy . fmap trd . lift . lift $ Reader.ask
+  where
+  trd (_,_,x) = x
+
+policyEvent :: Policy s m StatisticsEvent
+policyEvent = Policy . fmap fst . lift . lift $ Reader.ask
+  where
+  fst (x,_,_) = x
+
+policyDispatcherState :: Policy s m (DispatcherState m)
+policyDispatcherState = Policy . fmap snd . lift . lift $ Reader.ask
+  where
+  snd (_,x,_) = x
+
+policyStatistics :: Policy s m (Statistics m)
+policyStatistics = fmap dispatcherStatistics policyDispatcherState
+
+policyConnectionStates :: Policy s m (Map NT.ConnectionId (ConnectionState m))
+policyConnectionStates = fmap dispatcherConnectionStates policyDispatcherState
+
+-- | Never delay.
+noDelayPolicy :: DispatchPolicy m
+noDelayPolicy = dispatchPolicy () mzero
+
+-- | Always delay by a given fraction of seconds.
+uniformDelayPolicy :: ( HasTime m, Real a ) => a -> DispatchPolicy m
+uniformDelayPolicy n = dispatchPolicy () (pure (realToFrac n))
+
+{-
+-- | Randomly delay within the given bounds (lo, hi), as fractions of seconds.
+--   All values in the range are equally likely.
+rangeDelayPolicy :: ( HasTime m, RealFrac a ) => (a, a) -> DispatchPolicy m
+rangeDelayPolicy (lo, hi) = randomDelayPolicy distr
+  where
+  distr t = (realToFrac t) * hi + (realToFrac (1 - t)) * lo
+
+-- | Randomly delay according to some distribution function [0,1] -> a
+--   as fractions of seconds.
+--   All input values (in [0,1]) are equally likely.
+randomDelayPolicy :: ( HasTime m, Real a ) => (Double -> a) -> DispatchPolicy m
+randomDelayPolicy distr = do
+    t <- policyRandomValue (0.0, 1.0)
+    uniformDelayPolicy (distr t)
+-}
 
 -- | The state of a connection (associated with a 'ConnectionId', see
 --   'DispatcherState'.
@@ -178,6 +430,11 @@ data NonceState m =
 
     | NonceHandlerConnected !NT.ConnectionId
 
+      -- TODO use this one. It demands timing out the bidirectional handlers
+      -- so that the dispatcher state doesn't grow without bound (in case for
+      -- instance an ACK never comes).
+    | NonceHandlerFinished (Maybe SomeException)
+
 instance Show (NonceState m) where
     show term = case term of
         NonceHandlerNotConnected _ _ -> "NonceHandlerNotConnected"
@@ -192,7 +449,8 @@ instance Show (NonceState m) where
 nodeDispatcher :: forall m .
                   ( Mockable SharedAtomic m, Mockable Fork m, Mockable Bracket m
                   , Mockable Channel.Channel m, Mockable Throw m
-                  , Mockable Catch m )
+                  , Mockable Catch m, Mockable Delay m
+                  , Mockable GetCurrentTime m, HasTime m )
                => NT.EndPoint m
                -> SharedAtomicT m (NodeState m)
                -- ^ Nonce states and a StdGen to generate nonces. It's in a
@@ -200,11 +458,12 @@ nodeDispatcher :: forall m .
                --   it when they start a conversation.
                --   The third element of the triple will be updated by handler
                --   threads when they finish.
+               -> DispatchPolicy m
                -> (NodeId -> ChannelIn m -> m ())
                -> (NodeId -> ChannelIn m -> ChannelOut m -> m ())
                -> m ()
-nodeDispatcher endpoint nodeState handlerIn handlerInOut =
-    loop Map.empty
+nodeDispatcher endpoint nodeState dispatcherPolicy handlerIn handlerInOut =
+    dispatch (DispatcherState Map.empty initialStatistics) dispatcherPolicy
   where
 
     finally :: m t -> m () -> m t
@@ -240,18 +499,28 @@ nodeDispatcher endpoint nodeState handlerIn handlerInOut =
         where
 
         -- Updates connection and nonce states in a left fold.
-        folder (connIdState, nonces) (connidOrNonce, e) = case connidOrNonce of
-            Left connid -> (Map.update (connUpdater e) connid connIdState, nonces)
-            Right nonce -> folderNonce (connIdState, nonces) (nonce, e)
+        folder (dispatcherState, nonces) (connidOrNonce, e) = case connidOrNonce of
+            Left connid ->
+                let connectionStates = dispatcherConnectionStates dispatcherState
+                    connectionStates' = Map.update (connUpdater e) connid connectionStates
+                    dispatcherState' = dispatcherState {
+                          dispatcherConnectionStates = connectionStates'
+                        }
+                in  (dispatcherState', nonces)
+            Right nonce -> folderNonce (dispatcherState, nonces) (nonce, e)
 
-        folderNonce (connIdState, nonces) (nonce, e) = case Map.lookup nonce nonces of
+        folderNonce (dispatcherState, nonces) (nonce, e) = case Map.lookup nonce nonces of
             Nothing -> error "Handler for unknown nonce finished"
             Just (NonceHandlerNotConnected _ _) ->
-                (connIdState, Map.delete nonce nonces)
+                (dispatcherState, Map.delete nonce nonces)
             Just (NonceHandlerConnected connid) ->
-                ( Map.update (connUpdater e) connid connIdState
-                , Map.delete nonce nonces
-                )
+                let connectionStates = dispatcherConnectionStates dispatcherState
+                    connectionStates' = Map.update (connUpdater e) connid connectionStates
+                    dispatcherState' = dispatcherState {
+                          dispatcherConnectionStates = connectionStates'
+                        }
+                    nonces' = Map.delete nonce nonces
+                in  (dispatcherState', nonces')
 
         connUpdater :: Maybe SomeException -> ConnectionState m -> Maybe (ConnectionState m)
         connUpdater e connState = case connState of
@@ -259,35 +528,50 @@ nodeDispatcher endpoint nodeState handlerIn handlerInOut =
             _ -> Just (ConnectionHandlerFinished e)
 
     -- Handle the first chunks received, interpreting the control byte(s).
-    -- TODO: review this. It currently does not use the 'DispatcherState' but
-    -- that's dubious. Implementing good error handling will probably demand
-    -- using it.
     handleFirstChunks
         :: NT.ConnectionId
         -> NodeId
         -> [BS.ByteString]
         -> DispatcherState m
-        -> m (Maybe (ConnectionState m))
-    handleFirstChunks connid peer@(NodeId peerEndpointAddr) chunks _ =
+        -> m (DispatcherState m)
+    handleFirstChunks connid peer@(NodeId peerEndpointAddr) chunks !state =
         case LBS.uncons (LBS.fromChunks chunks) of
             -- Empty. Wait for more data.
-            Nothing -> pure Nothing
+            Nothing -> pure state
             Just (w, ws)
                 -- Peer wants a unidirectional (peer -> local)
                 -- connection. Make a channel for the incoming
                 -- data and fork a thread to consume it.
                 | w == controlHeaderCodeUnidirectional -> do
                   chan <- Channel.newChannel
-                  mapM_ (Channel.writeChannel chan . Just) (LBS.toChunks ws)
+                  bytes <- channelInWrite (ChannelIn chan) (LBS.toChunks ws)
                   tid  <- fork $ finishHandler nodeState (Left connid) (handlerIn peer (ChannelIn chan))
-                  pure . Just $ ConnectionReceiving tid chan
+                  let stats = dispatcherStatistics state
+                      stats' = stats {
+                            statsTotalHandlers = statsTotalHandlers stats + 1
+                          , statsBytesReceived = statsBytesReceived stats + fromIntegral bytes
+                          }
+                      connStates = dispatcherConnectionStates state
+                      connStates' = Map.insert connid (ConnectionReceiving tid chan) connStates
+                      state' = state {
+                            dispatcherConnectionStates = connStates'
+                          , dispatcherStatistics = stats'
+                          }
+                  pure state'
 
                 -- Bidirectional header without the nonce
                 -- attached. Wait for the nonce.
                 | w == controlHeaderCodeBidirectionalAck ||
                   w == controlHeaderCodeBidirectionalSyn
-                , LBS.length ws < 8 -> -- need more data
-                  pure . Just $ ConnectionNewChunks peer chunks
+                , LBS.length ws < 8 -> do -- need more data
+                  let stats = dispatcherStatistics state
+                      connStates = dispatcherConnectionStates state
+                      connStates' = Map.insert connid (ConnectionNewChunks peer chunks) connStates
+                      state' = state {
+                            dispatcherConnectionStates = connStates'
+                          , dispatcherStatistics = stats
+                          }
+                  pure state'
 
                 -- Peer wants a bidirectional connection.
                 -- Fork a thread to reply with an ACK and then
@@ -311,7 +595,17 @@ nodeDispatcher endpoint nodeState handlerIn handlerInOut =
                                   `finally`
                                   closeChannel (ChannelOut conn)
                   tid <- fork $ finishHandler nodeState (Left connid) action
-                  pure . Just $ ConnectionReceiving tid chan
+                  let stats = dispatcherStatistics state
+                      stats' = stats {
+                            statsTotalHandlers = statsTotalHandlers stats + 1
+                          }
+                      connStates = dispatcherConnectionStates state
+                      connStates' = Map.insert connid (ConnectionReceiving tid chan) connStates
+                      state' = state {
+                            dispatcherConnectionStates = connStates'
+                          , dispatcherStatistics = stats'
+                          }
+                  pure state'
 
                 -- We want a bidirectional connection and the
                 -- peer has acknowledged. Check that their nonce
@@ -333,49 +627,109 @@ nodeDispatcher endpoint nodeState handlerIn handlerInOut =
                 , Right (ws',_,nonce) <- decodeOrFail ws -> do
                   (tid, ChannelIn chan) <- modifySharedAtomic nodeState $ \(NodeState prng expected finished) ->
                       case Map.lookup nonce expected of
+                          -- The nonce is not known. It could be that:
+                          -- 1. We really didn't send a SYN for this nonce,
+                          --    in which case it's a protocol error.
+                          -- 2. We did send a SYN for this nonce, but our
+                          --    handler finished before this ACK arrived,
+                          --    in which case it's not a protocl error (but
+                          --    perhaps a silly use of a bidirectional
+                          --    connection).
+                          --
                           Nothing -> throw (ProtocolError $ "unexpected ack nonce " ++ show nonce)
                           Just (NonceHandlerNotConnected tid inchan) -> do
                               let !expected' = Map.insert nonce (NonceHandlerConnected connid) expected
                               return ((NodeState prng expected' finished), (tid, inchan))
                           Just _ -> throw (InternalError $ "duplicate or delayed ACK for " ++ show nonce)
                   mapM_ (Channel.writeChannel chan . Just) (LBS.toChunks ws')
-                  pure . Just $ ConnectionReceiving tid chan
+                  let stats = dispatcherStatistics state
+                      connStates = dispatcherConnectionStates state
+                      connStates' = Map.insert connid (ConnectionReceiving tid chan) connStates
+                      state' = state {
+                            dispatcherConnectionStates = connStates'
+                          , dispatcherStatistics = stats
+                          }
+                  pure state'
 
                 | otherwise ->
                     throw (ProtocolError $ "unexpected control header " ++ show w)
 
-    loop :: DispatcherState m -> m ()
-    loop !state = do
+    -- | Use the policy to determine a delay and then loop back into the
+    --   dispatcher.
+    loop
+        :: StatisticsEvent
+        -> DispatcherState m
+        -> DispatchPolicy m
+        -> TimeAbsolute m
+        -> m ()
+    loop !event !state !dispatchPolicy !timeNow = do
+        let (!maybeDelay, !dispatchPolicy') = runDispatchPolicy event state timeNow dispatchPolicy
+        -- Multiply by 10^6 because the whole number part of a TimeDelta is to
+        -- be interpreted as seconds, but a delay is to be given microseconds.
+        _ <- maybe (pure ()) (delay . round . (*) 1000000) maybeDelay
+        dispatch state dispatchPolicy'
+
+    dispatch :: DispatcherState m -> DispatchPolicy m -> m ()
+    dispatch !state !policy = do
+      !timeNow <- getCurrentTime
       !state <- updateStateForFinishedHandlers state
+      let connStates = dispatcherConnectionStates state
+          stats = dispatcherStatistics state
+          continue = \sevent state -> loop sevent state policy timeNow
       event <- NT.receive endpoint
       case event of
 
           NT.ConnectionOpened connid NT.ReliableOrdered peer ->
               -- Just keep track of the new connection, nothing else
-              loop (Map.insert connid (ConnectionNew (NodeId peer)) state)
+              let state' = state {
+                        dispatcherConnectionStates = Map.insert connid (ConnectionNew (NodeId peer)) connStates
+                      }
+                  sevent = SEConnectionOpened connid peer
+              in  continue sevent state'
+
+          NT.ConnectionOpened _ _ _ ->
+              throw (ProtocolError "unexpected connection reliability")
 
           -- receiving data for an existing connection (ie a multi-chunk message)
-          NT.Received connid chunks ->
-              case Map.lookup connid state of
+          NT.Received connid chunks -> do
+              let !bytesReceived = sizeOfChunks chunks
+                  !stats' = stats {
+                        statsBytesReceived = statsBytesReceived stats + bytesReceived
+                      }
+
+              case Map.lookup connid connStates of
+
+                  -- TODO: may not be an error. What if we want to ignore a new
+                  -- connection, leaving it out of the connection state map so
+                  -- that whenever we receive from it, we just forget about the
+                  -- data?
                   Nothing ->
                       throw (InternalError "received data on unknown connection")
 
                   -- TODO: need policy here on queue size
                   Just (ConnectionNew peer) ->
-                      loop (Map.insert connid (ConnectionNewChunks peer chunks) state)
+                      let state' = DispatcherState
+                              (Map.insert connid (ConnectionNewChunks peer chunks) connStates)
+                              stats
+                          sevent = SEDataReceived connid (sizeOfChunks chunks)
+                      in  continue sevent state'
 
                   Just (ConnectionNewChunks peer@(NodeId _) chunks0) -> do
-                      mConnState <- handleFirstChunks connid peer (chunks0 ++ chunks) state
-                      loop (maybe state (\cs -> Map.insert connid cs state) mConnState)
+                      let allchunks = chunks0 ++ chunks
+                      let sevent = SEDataReceived connid (sizeOfChunks allchunks)
+                      !state' <- handleFirstChunks connid peer allchunks state
+                      continue sevent state'
 
                   -- Connection is receiving data and there's some handler
                   -- at 'tid' to run it. Dump the new data to its ChannelIn.
                   Just (ConnectionReceiving tid chan) -> do
-                    mapM_ (Channel.writeChannel chan . Just) chunks
-                    loop state
+                      size <- channelInWrite (ChannelIn chan) chunks
+                      let sevent = SEDataReceived connid size
+                      -- TODO update statistics.
+                      continue sevent state
 
                   Just (ConnectionClosed tid) ->
-                    throw (InternalError "received data on closed connection")
+                      throw (InternalError "received data on closed connection")
 
                   -- The peer keeps pushing data but our handler is finished.
                   -- What to do? Would like to close the connection but I'm
@@ -386,10 +740,11 @@ nodeDispatcher endpoint nodeState handlerIn handlerInOut =
                   -- network-transport to allow for selective closing of peer
                   -- connection based on EndPointAddress.
                   Just (ConnectionHandlerFinished maybeException) ->
-                    throw (InternalError "received too much data")
+                      throw (InternalError "received too much data")
 
-          NT.ConnectionClosed connid ->
-              case Map.lookup connid state of
+          NT.ConnectionClosed connid -> do
+              let sevent = SEConnectionClosed connid
+              case Map.lookup connid connStates of
                   Nothing ->
                       throw (InternalError "closed unknown connection")
 
@@ -397,31 +752,56 @@ nodeDispatcher endpoint nodeState handlerIn handlerInOut =
                   -- with the connection. The case in which the handler finishes
                   -- *after* the connection closes is taken care of in
                   -- 'updateStateForFinishedHandlers'.
-                  Just (ConnectionHandlerFinished _) ->
-                      loop (Map.delete connid state)
+                  Just (ConnectionHandlerFinished _) -> do
+                      let connStates = dispatcherConnectionStates state
+                          stats = dispatcherStatistics state
+                          connStates' = Map.delete connid connStates
+                          stats' = stats {
+                                statsCompletedHandlers = statsCompletedHandlers stats + 1
+                              }
+                          state' = state {
+                                dispatcherConnectionStates = connStates'
+                              , dispatcherStatistics = stats'
+                              }
+                      continue sevent state'
 
                   -- Empty message
                   Just (ConnectionNew peer) -> do
                       chan <- Channel.newChannel
                       Channel.writeChannel chan Nothing
                       tid  <- fork $ finishHandler nodeState (Left connid) (handlerIn peer (ChannelIn chan))
-                      loop (Map.insert connid (ConnectionClosed tid) state)
+                      let connStates' = Map.insert connid (ConnectionClosed tid) connStates
+                          state' = state {
+                                dispatcherConnectionStates = connStates'
+                              }
+                      continue sevent state'
 
                   -- Small message
                   Just (ConnectionNewChunks peer chunks0) -> do
-                      mConnState <- handleFirstChunks connid peer chunks0 state
-                      case mConnState of
+                      !state' <- handleFirstChunks connid peer chunks0 state
+                      let connStates = dispatcherConnectionStates state'
+                      case Map.lookup connid connStates of
                           Just (ConnectionReceiving tid chan) -> do
                               -- Write Nothing to indicate end of input.
-                              Channel.writeChannel chan Nothing
-                              loop (Map.insert connid (ConnectionClosed tid) state)
+                              _ <- Channel.writeChannel chan Nothing
+                              let connStates' = Map.insert connid (ConnectionClosed tid) connStates
+                                  state'' = state' {
+                                        dispatcherConnectionStates = connStates'
+                                      }
+                                  sevent = SEConnectionClosed connid
+                              continue sevent state''
                           _ -> throw (InternalError "malformed small message")
 
                   -- End of incoming data. Signal that by writing 'Nothing'
                   -- to the ChannelIn.
                   Just (ConnectionReceiving tid chan) -> do
-                      Channel.writeChannel chan Nothing
-                      loop (Map.insert connid (ConnectionClosed tid) state)
+                      _ <- Channel.writeChannel chan Nothing
+                      let sevent = SEConnectionClosed connid
+                          connStates' = Map.insert connid (ConnectionClosed tid) connStates
+                          state' = state {
+                                dispatcherConnectionStates = connStates'
+                              }
+                      continue sevent state'
 
                   Just (ConnectionClosed tid) ->
                       throw (InternalError "closed a closed connection")
@@ -431,20 +811,17 @@ nodeDispatcher endpoint nodeState handlerIn handlerInOut =
               -- Throw them a special exception?
               return ()
 
-          NT.ErrorEvent (NT.TransportError (NT.EventErrorCode (NT.EventConnectionLost peer)) _msg) ->
+          NT.ErrorEvent (NT.TransportError (NT.EventErrorCode (NTT.EventConnectionLost peer)) _msg) ->
               throw (InternalError "Connection lost")
 
-          NT.ErrorEvent (NT.TransportError (NT.EventErrorCode NT.EventEndPointFailed)  msg) ->
+          NT.ErrorEvent (NT.TransportError (NT.EventErrorCode NTT.EventEndPointFailed)  msg) ->
               throw (InternalError "EndPoint failed")
 
-          NT.ErrorEvent (NT.TransportError (NT.EventErrorCode NT.EventTransportFailed) msg) ->
+          NT.ErrorEvent (NT.TransportError (NT.EventErrorCode NTT.EventTransportFailed) msg) ->
               throw (InternalError "Transport failed")
 
           NT.ErrorEvent (NT.TransportError NT.UnsupportedEvent msg) ->
               throw (InternalError "Unsupported event")
-
-          NT.ConnectionOpened _ _ _ ->
-              throw (ProtocolError "unexpected connection reliability")
 
 -- | Augment some m term so that it always updates a 'NodeState' mutable
 --   cell when finished, along with the exception if one was raised. We catch

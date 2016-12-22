@@ -47,12 +47,13 @@ import           System.Wlog            (LoggerConfig (..), LoggerNameBox, Sever
                                          WithLogger, getLoggerName, logInfo,
                                          parseLoggerConfig, traverseLoggerConfig,
                                          usingLoggerName)
-
+import qualified Data.Time.Clock        as Time
 import           Mockable.Channel
 import           Mockable.Class
 import           Mockable.Concurrent
 import           Mockable.Exception
 import           Mockable.SharedAtomic
+import           Mockable.Time
 
 
 -- * Transfered data types
@@ -231,3 +232,15 @@ instance Mockable Bracket (LoggerNameBox IO) where
 
 instance Mockable Throw (LoggerNameBox IO) where
     liftMockable (Throw e) = lift $ Exception.throwIO e
+
+instance HasTime (LoggerNameBox IO) where
+    type TimeAbsolute (LoggerNameBox IO) = Time.UTCTime
+    type TimeDelta (LoggerNameBox IO) = Time.NominalDiffTime
+    addTime _ = flip Time.addUTCTime
+    diffTime _ = Time.diffUTCTime
+
+instance Mockable GetCurrentTime (LoggerNameBox IO) where
+    liftMockable (GetCurrentTime) = lift Time.getCurrentTime
+
+instance Mockable Delay (LoggerNameBox IO) where
+    liftMockable (Delay us) = lift $ Conc.threadDelay us

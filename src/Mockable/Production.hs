@@ -35,8 +35,8 @@ deriving instance MonadFix Production
 instance HasTime Production where
     type TimeAbsolute Production = Time.UTCTime
     type TimeDelta Production = Time.NominalDiffTime
-    addTime = flip Time.addUTCTime
-    diffTime = Time.diffUTCTime
+    addTime _ = flip Time.addUTCTime
+    diffTime _ = Time.diffUTCTime
 
 instance Mockable GetCurrentTime Production where
     liftMockable (GetCurrentTime) = Production $ Time.getCurrentTime

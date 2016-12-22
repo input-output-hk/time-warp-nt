@@ -68,19 +68,28 @@ listeners id = [Listener (fromString "ping") pongWorker]
 
 main = runProduction $ do
 
-    Right transport_ <- liftIO $ TCP.createTransport ("127.0.0.1") ("10128") TCP.defaultTCPParameters
-    let transport = concrete transport_
-    Right endpoint1 <- newEndPoint transport
-    Right endpoint2 <- newEndPoint transport
+    Right transport1_ <- liftIO $ TCP.createTransport ("0.0.0.0") ("10128") TCP.defaultTCPParameters
+    Right transport2_ <- liftIO $ TCP.createTransport ("0.0.0.0") ("10129") TCP.defaultTCPParameters
+    let transport1 = concrete transport1_
+    let transport2 = concrete transport2_
+    Right endpoint1 <- newEndPoint transport1
+    Right endpoint2 <- newEndPoint transport2
 
     let prng1 = mkStdGen 0
     let prng2 = mkStdGen 1
     let prng3 = mkStdGen 2
     let prng4 = mkStdGen 3
 
+    let policy1 = noDelayPolicy
+    let policy2 :: DispatchPolicy Production
+        policy2 = noDelayPolicy -- uniformDelayPolicy ((1/2) :: Rational)
+    -- Randomly delay between 0 and 5 seconds.
+    let policy3 :: DispatchPolicy Production
+        policy3 = noDelayPolicy -- randomDelayPolicy $ (*) 5
+
     liftIO . putStrLn $ "Starting nodes"
-    rec { node1 <- startNode endpoint1 prng1 (workers nodeId1 prng2 [nodeId2]) (listeners nodeId1)
-        ; node2 <- startNode endpoint2 prng3 (workers nodeId2 prng4 [nodeId1]) (listeners nodeId2)
+    rec { node1 <- startNode endpoint1 prng1 policy1 (workers nodeId1 prng2 [nodeId2]) (listeners nodeId1)
+        ; node2 <- startNode endpoint2 prng3 policy3 (workers nodeId2 prng4 [nodeId1]) (listeners nodeId2)
         ; let nodeId1 = nodeId node1
         ; let nodeId2 = nodeId node2
         }

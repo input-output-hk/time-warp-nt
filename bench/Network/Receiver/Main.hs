@@ -23,7 +23,7 @@ import           Bench.Network.Commons      (MeasureEvent (..), Ping (..), Pong 
 import           Network.Transport.Concrete (concrete)
 import           Network.Transport.Abstract (newEndPoint)
 import           Node                       (Listener (..), ListenerAction (..), sendTo,
-                                             startNode, stopNode)
+                                             startNode, stopNode, noDelayPolicy)
 import           ReceiverOptions            (Args (..), argsParser)
 
 instance Mockable Catch (LoggerNameBox IO) where
@@ -50,7 +50,7 @@ main = do
 
     usingLoggerName "receiver" $ do
         Right endPoint <- newEndPoint transport
-        receiverNode <- startNode endPoint prng []
+        receiverNode <- startNode endPoint prng noDelayPolicy []
             [Listener "ping" $ pingListener noPong]
 
         threadDelay (fromIntegral duration :: Second)

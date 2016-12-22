@@ -6,7 +6,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-import Control.Monad (forM_, forM, when)
+import Control.Monad (forM_, forM, when, mzero)
 import Control.Monad.IO.Class (liftIO)
 import Data.String (fromString)
 import Data.Binary
@@ -21,7 +21,7 @@ import Network.Discovery.Abstract
 import qualified Network.Discovery.Transport.Kademlia as K
 import System.Environment (getArgs)
 import System.Random
-import Mockable.Concurrent (delay)
+import Mockable.Concurrent (fork, delay, runInUnboundThread)
 import Mockable.Production
 
 data Pong = Pong
@@ -41,13 +41,15 @@ workers id gen discovery = [pingWorker gen]
     pingWorker gen sendActions = loop gen
         where
         loop gen = do
-            let (i, gen') = randomR (1000,2000000) gen
+            let (i, gen') = randomR (0,2000000) gen
             delay i
             peerSet_ <- knownPeers discovery
             discoverPeers discovery
             peerSet <- knownPeers discovery
             liftIO . putStrLn $ show id ++ " has peer set: " ++ show peerSet
-            forM_ (S.toList peerSet) $ \addr -> withConnectionTo sendActions (NodeId addr) (fromString "ping") $
+            -- For each peer, fork a thread to do a PING/PONG conversation
+            -- with it, and *do not* wait for it.
+            forM_ (S.toList peerSet) $ \addr -> fork $ withConnectionTo sendActions (NodeId addr) (fromString "ping") $
                 \(cactions :: ConversationActions Void Pong Production) -> do
                     received <- recv cactions
                     case received of
@@ -63,22 +65,33 @@ listeners id = [Listener (fromString "ping") pongListener]
         liftIO . putStrLn $ show id ++  " heard PING from " ++ show peerId
         send cactions Pong
 
-makeNode transport i = do
-    let port = 3000 + i
+makeNode i = do
+    let tcpport = 10128 + i
+    let udpport = 3000 + i
     let host = "127.0.0.1"
+    let tcpParameters = TCP.defaultTCPParameters {TCP.tcpUserTimeout = Just 10}
+    Right transport_ <- liftIO $ TCP.createTransport ("127.0.0.1") (show tcpport) tcpParameters
+    let transport = concrete transport_
     let id = makeId i
     let initialPeer =
             if i == 0
             -- First node uses itself as initial peer, else it'll panic because
             -- its initial peer appears to be down.
-            then K.Node (K.Peer host (fromIntegral port)) id
-            else K.Node (K.Peer host (fromIntegral (port - 1))) (makeId (i - 1))
-    let kademliaConfig = K.KademliaConfiguration (fromIntegral port) id
+            then K.Node (K.Peer host (fromIntegral udpport)) id
+            else K.Node (K.Peer host (fromIntegral (udpport - 1))) (makeId (i - 1))
+    let kademliaConfig = K.KademliaConfiguration (fromIntegral udpport) id
     let prng1 = mkStdGen (2 * i)
     let prng2 = mkStdGen ((2 * i) + 1)
+    -- 5 second delay on all events for the 0'th node, no delay for the others.
+    let policy :: DispatchPolicy Production
+        policy = if i == -1 then uniformDelayPolicy (5 :: Int) else noDelayPolicy
+        {-
+        policy = do x <- randomDelayPolicy steppedDelay
+                    if (x == 0) then mzero else pure x
+        -}
     liftIO . putStrLn $ "Starting node " ++ show i
     Right endPoint <- newEndPoint transport
-    rec { node <- startNode endPoint prng1 (workers (nodeId node) prng2 discovery) (listeners (nodeId node))
+    rec { node <- startNode endPoint prng1 policy (workers (nodeId node) prng2 discovery) (listeners (nodeId node))
         ; let localAddress = nodeEndPointAddress node
         ; liftIO . putStrLn $ "Making discovery for node " ++ show i
         ; discovery <- K.kademliaDiscovery kademliaConfig initialPeer localAddress
@@ -89,6 +102,11 @@ makeNode transport i = do
         | i < 10 = B8.pack ("node_identifier_0" ++ show i)
         | otherwise = B8.pack ("node_identifier_" ++ show i)
 
+    steppedDelay d
+        | d > 0.99 = 10
+        | d > 0.9 = 5
+        | otherwise = 0
+
 main = runProduction $ do
 
     [arg0] <- liftIO getArgs
@@ -96,15 +114,16 @@ main = runProduction $ do
 
     when (number > 99 || number < 1) $ error "Give a number in [1,99]"
 
-    --transport_ <- liftIO $ InMemory.createTransport
-    Right transport_ <- liftIO $ TCP.createTransport ("127.0.0.1") ("10128") TCP.defaultTCPParameters
-    let transport = concrete transport_
+    runInUnboundThread $ do
 
-    liftIO . putStrLn $ "Spawning " ++ show number ++ " nodes"
-    nodesAndDiscoveries <- forM [0..number] (makeNode transport)
+        liftIO . putStrLn $ "Spawning " ++ show number ++ " nodes"
+        nodesAndDiscoveries <- forM [0..number] makeNode
 
-    liftIO $ putStrLn "Hit return to stop"
-    _ <- liftIO $ getChar
+        liftIO $ putStrLn "Hit return to stop"
+        _ <- liftIO $ getChar
 
-    liftIO $ putStrLn "Stopping nodes"
-    forM_ nodesAndDiscoveries (\(n, d) -> stopNode n >> closeDiscovery d)
+        liftIO $ putStrLn "Stopping nodes"
+        forM_ nodesAndDiscoveries (\(n, d) -> stopNode n >> closeDiscovery d)
+
+-- TODO add a feature: some options so that we can spin this up in multiple
+-- processes
