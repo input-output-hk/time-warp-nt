@@ -3,8 +3,8 @@ resolver: lts-7.13
 packages:
   - '.'
   - location:
-      git: https://github.com/serokell/kademlia.git
-      commit: 062053ed11b92c8e25d4d61ea943506fd0482fa6
+      git: git@github.com:avieth/kademlia.git
+      commit: 2cc39a19f4456d9cceac21ec02153b7c5b5f5d14
     extra-dep: true
   - location:
       git: https://github.com/serokell/log-warper.git
