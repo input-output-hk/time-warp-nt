@@ -28,6 +28,8 @@ import           Data.Binary
 import qualified Data.Set as S
 import qualified Data.Map.Strict as M
 import qualified Node as N
+import           Mockable.Class (Mockable)
+import           Mockable.Concurrent (forConcurrently, Concurrently)
 import           Message.Message (Serializable, BinaryP)
 
 data WithKademliaIdentifier bytes body = WithKademliaIdentifier {
@@ -45,7 +47,7 @@ instance ( KnownNat bytes, Binary body ) => Binary (WithKademliaIdentifier bytes
 
 kademliaBroadcast
     :: forall bytes body m .
-       ( KnownNat bytes, Binary body, MonadIO m )
+       ( KnownNat bytes, Binary body, MonadIO m, Mockable Concurrently m )
     => KademliaDiscovery bytes m
     -> Broadcast BinaryP body m
 kademliaBroadcast kd messageName = do
@@ -55,7 +57,7 @@ kademliaBroadcast kd messageName = do
 
 kademliaInitiator
     :: forall bytes body m .
-       ( KnownNat bytes, Binary body, MonadIO m )
+       ( KnownNat bytes, Binary body, MonadIO m, Mockable Concurrently m )
     => KademliaDiscovery bytes m
     -> N.MessageName
     -> Initiator BinaryP body m
@@ -79,15 +81,15 @@ kademliaInitiator kd messageName body sactions = do
     -- a given MostSignificant 1 bit.
     --let buckets = KT.toView kademliaTree >>= organizeBucket . eliminateId myKId
     let buckets = organizeBucket myKId . eliminateId myKId . KT.toList $ kademliaTree
-    liftIO . putStrLn $ "Initial broadcast buckets are " ++ show buckets
-    -- TODO concurrently.
-    _ <- forM buckets $ \knodes -> case firstKnownAddress knownAddresses knodes of
+    --liftIO . putStrLn $ "Initial broadcast buckets are " ++ show buckets
+    _ <- forConcurrently buckets $ \knodes -> case firstKnownAddress knownAddresses knodes of
         -- TODO we know a node but not yet its address. This isn't an
         -- error and will probably happen once in a while. Log it?
         Nothing -> do
-            liftIO . putStrLn $ "Missing addresses for " ++ show knodes
+            --liftIO . putStrLn $ "Missing addresses for " ++ show knodes
+            pure ()
         Just addr -> do
-            liftIO . putStrLn $ "Initiating broadcast to " ++ show addr
+            --liftIO . putStrLn $ "Initiating broadcast to " ++ show addr
             N.sendTo sactions (N.NodeId addr) messageName payload
     pure ()
     where
@@ -95,7 +97,7 @@ kademliaInitiator kd messageName body sactions = do
 
 kademliaWithRepeater
     :: forall bytes body m .
-       ( Binary body, KnownNat bytes, MonadIO m )
+       ( Binary body, KnownNat bytes, MonadIO m, Mockable Concurrently m )
     => KademliaDiscovery bytes m
     -> N.MessageName
     -> WithRepeater BinaryP body m
@@ -107,11 +109,10 @@ kademliaWithRepeater kd messageName f = N.Listener messageName $ N.ListenerActio
             kademliaTree <- liftIO . STM.atomically . STM.readTVar . KI.sTree . KI.state . kdInstance $ kd
             knownAddresses <- liftIO . STM.atomically . STM.readTVar . kdEndPointAddresses $ kd
             let buckets = bucketsCloserTo myKId senderKId kademliaTree
-            liftIO . putStrLn $ "Repeat broadcast buckets are " ++ show buckets
+            --liftIO . putStrLn $ "Repeat broadcast buckets are " ++ show buckets
             --liftIO . putStrLn $ "My id is " ++ show (toByteStruct myKId)
             --liftIO . putStrLn $ "His id is " ++ show (toByteStruct senderKId)
-            -- TODO concurrently.
-            _ <- forM buckets $ \knodes -> case firstKnownAddress knownAddresses knodes of
+            _ <- forConcurrently buckets $ \knodes -> case firstKnownAddress knownAddresses knodes of
                 Nothing -> pure ()
                 Just addr -> N.sendTo sactions (N.NodeId addr) messageName payload
             pure ()
