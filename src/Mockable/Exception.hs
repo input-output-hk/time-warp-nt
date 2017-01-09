@@ -9,6 +9,7 @@ module Mockable.Exception (
 
       Bracket(..)
     , bracket
+    , bracket_
     , finally
 
     , Throw(..)
@@ -34,6 +35,9 @@ instance MFunctor' Bracket m n where
 
 bracket :: ( Mockable Bracket m ) => m r -> (r -> m b) -> (r -> m c) -> m c
 bracket acquire release act = liftMockable $ Bracket acquire release act
+
+bracket_ :: ( Mockable Bracket m ) => m r -> m b -> m c -> m c
+bracket_ acquire release act = bracket acquire (const release) (const act)
 
 finally :: ( Mockable Bracket m ) => m a -> m b -> m a
 finally act end = bracket (return ()) (const end) (const act)
