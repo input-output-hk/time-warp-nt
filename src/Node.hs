@@ -164,7 +164,7 @@ makeListenerIndex :: ( Monad m )
                   => [Listener packing m]
                   -> (ListenerIndex packing m, [MessageName])
 makeListenerIndex listeners =
-    let (processingListeners, systemListeners) = partition isSystemListener listeners
+    let (systemListeners, processingListeners) = partition isSystemListener listeners
         (processing, conflictingNames) = foldr combine (M.empty, []) processingListeners
         system = head $ systemListeners ++ [noSystemListener]
     in  (ListenerIndex processing system, conflictingNames)
