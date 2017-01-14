@@ -30,8 +30,9 @@ import           Data.Text                   (Text)
 import           Data.Time.Units             (Microsecond, Second)
 import           Data.Typeable               (Typeable)
 import           Formatting                  (sformat, shown, (%))
-import           Network.Socket              (AddrInfoFlag (AI_PASSIVE), SockAddr (..),
-                                              Socket, SocketOption (ReuseAddr),
+import           Network.Socket              (AddrInfoFlag (AI_PASSIVE), Family (AF_INET),
+                                              SockAddr (..), Socket,
+                                              SocketOption (ReuseAddr),
                                               SocketType (Datagram), addrAddress,
                                               addrFamily, addrFlags, bind, close,
                                               defaultHints, defaultProtocol, getAddrInfo,
@@ -171,9 +172,11 @@ mkSocket settings = doMkSocket `catchAll` handlerE
   where
     doMkSocket = liftIO $ do
         -- Copied from Kademlia library
-        (serveraddr:_) <- getAddrInfo
+        serveraddrs <- getAddrInfo
                      (Just (defaultHints {addrFlags = [AI_PASSIVE]}))
                      Nothing (Just "5323")
+
+        let serveraddr = head $ filter (\a -> addrFamily a == AF_INET) serveraddrs
 
         sock <- socket (addrFamily serveraddr) Datagram defaultProtocol
         setSocketOption sock ReuseAddr 1
