@@ -181,7 +181,7 @@ mkSocket settings = doMkSocket `catchAll` handlerE
         -- Copied from Kademlia library
         serveraddrs <- getAddrInfo
                      (Just (defaultHints {addrFlags = [AI_PASSIVE]}))
-                     Nothing (Just port)
+                     Nothing (Just "0")
 
         let serveraddr = head $ filter (\a -> addrFamily a == AF_INET) serveraddrs
 
