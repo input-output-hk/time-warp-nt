@@ -1,0 +1,1267 @@
+[33mcommit fdc53ebc5ee4cb1ba52c4b3b56dd179480c646af[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sat Jan 14 21:37:52 2017 +0300
+
+    [TW-102] Use IPv4 only address to bind
+
+[33mcommit 7910900a8024516fcc2b9fc9f36e8bb19d22f449[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sat Jan 14 20:32:26 2017 +0300
+
+    [TW-102] Specify bind port as config param
+
+[33mcommit d2144a1870b1e1951df9bd691698f299a4ae9b1b[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sat Jan 14 19:34:02 2017 +0300
+
+    [TW-102] Try to create socket like in Kademlia, with hardcoded port
+
+[33mcommit e34d3824022234508d1f2f62c41a7a577553d4d6[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sat Jan 14 18:06:56 2017 +0300
+
+    [TW-102] Set received packet size to 48 in NTP
+
+[33mcommit 71487c0f1f008492962eb4a4d0fe9555a74319aa[m
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Sat Jan 14 13:38:25 2017 +0300
+
+    Fix haddock documentation
+
+[33mcommit 8d4773a6a03b9b1d676115ba4bf6a5021bc184c9[m
+Author: George Agapov <george.agapov@gmail.com>
+Date:   Sat Jan 14 10:28:02 2017 +0300
+
+    [CSL-541] Use serokell/network-transport-tcp
+
+[33mcommit dbb2d27ddf7e90054afa7bf2a43d1c49cc4bdb1b[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sat Jan 14 05:37:24 2017 +0300
+
+    [TW-111] Throw exceptions on send
+
+[33mcommit 3afa8f2580e0ef1e3ed5cdae1578b14bb71e009d[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sat Jan 14 03:50:50 2017 +0300
+
+    Fix tests
+
+[33mcommit ddeaad9c1142109b937f384ad8d9f2a465eed316[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sat Jan 14 03:43:04 2017 +0300
+
+    Fix warnings
+
+[33mcommit dcb3c04243280a8710cd72458ad554c07a458817[m
+Merge: e4c9850 2425c90
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sat Jan 14 03:41:23 2017 +0300
+
+    [CSL-541] Merge wait_for_handlers
+
+[33mcommit e4c98505761caa35018d3e6ac7eb33861f36ee16[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sat Jan 14 02:57:16 2017 +0300
+
+    [TW-111] Replace one more `throw`
+
+[33mcommit 7b1cfeb3e5d6e2fad36f47ec0e7e0b7fcdf17c7b[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sat Jan 14 02:16:57 2017 +0300
+
+    [CSL-541] Handle errors, more logging
+
+[33mcommit dd865041747d0ca6ecd008690982de897c981c37[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Fri Jan 13 23:51:01 2017 +0300
+
+    [CSL-541] Add logging, don't throw on parse errors
+
+[33mcommit bb4d07864ca31db65eac102d1bf146930935edb2[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Tue Jan 10 10:28:11 2017 -0500
+
+    withConnectionTo type generalized
+    
+    It can now give `m t` rather than `m ()`.
+
+[33mcommit 633714c23879ea60e697db7bf70548a291cdbcda[m
+Author: George Agapov <george.agapov@gmail.com>
+Date:   Thu Jan 12 21:16:19 2017 +0300
+
+    [CSL-541] Add Concurrently to MonadMockable
+
+[33mcommit 0997ecdce970c2861938eaba3a3afb1cb5e80749[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Wed Jan 11 19:45:54 2017 +0300
+
+    [CSL-447] Add `sendActions` to `ListenerActionConversation`
+
+[33mcommit d3928e4d983f477df0afec9bb029d25ef80d67fd[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Wed Jan 11 16:11:59 2017 +0300
+
+    [CSL-447] Return `SleepForever` to `forever wait`
+
+[33mcommit 3840202c1bb4b48446bc6658084ca45b9bb3a553[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Tue Jan 10 19:33:23 2017 +0300
+
+    Mode `Message.Message` to `Node.Message`
+
+[33mcommit 29c2035b925c5e2b15b546a52ba252e95b53aa44[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Tue Jan 10 19:14:56 2017 +0300
+
+    Return benchmarks flag default value = False
+
+[33mcommit ff1eb0797d21409407a78de4c657791f4abd0c56[m
+Merge: 5afea6a d63babe
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Tue Jan 10 19:06:42 2017 +0300
+
+    Merge simplify-delay
+
+[33mcommit 2425c900c67e3dd492e10496cea42766e83f349f[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Tue Jan 10 10:28:11 2017 -0500
+
+    withConnectionTo type generalized
+    
+    It can now give `m t` rather than `m ()`.
+
+[33mcommit 5afea6af8f36e87ec7a0e31a36b1598e9ca3e41f[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Tue Jan 10 05:19:04 2017 +0300
+
+    Remove `getCompanion`
+
+[33mcommit 03f1310f7e91e28d144cb68d580e500ceab6151f[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Mon Jan 9 16:32:34 2017 -0500
+
+    Wait for handlers on close, improve error handling
+    
+    It's possible that a SYN is received after an end point has closed. This
+    was observed in the test cases, in which 0 parcels were to be sent: the
+    sender would establish the connection but the end point would close
+    before the SYN was received. When it's received, the dispatcher tries to
+    ACK but it can't make a connection. Now the SYN will be ignored whenever
+    the end point has already closed.
+    
+    Even with this fix, we would still observe an EventConnectionLost,
+    causing the dispatcher to blow up. But no more. Now an
+    EventConnectionLost is handled gracefully: all connections to that end
+    point have their ChannelIn plugged with a Nothing and no error is
+    thrown.
+
+[33mcommit 36b1008efb8f4e81078c1b97bcc55a4b052ee70b[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Mon Jan 9 16:32:19 2017 -0500
+
+    Define NonEmptySet
+
+[33mcommit 658af122de9751c1386ad687eb1d1835b28db295[m
+Author: George Agapov <george.agapov@gmail.com>
+Date:   Mon Jan 9 08:00:49 2017 +0300
+
+    [CSL-447] Add hoistListenerAction
+
+[33mcommit c076b83f6d67dd2a0c0f2474cdcc903da3d71c48[m
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Mon Jan 9 01:54:56 2017 +0300
+
+    Minor mocks refactoring
+
+[33mcommit bf2b4c4011067da83ceed54fd38ddbc95c3a65a5[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Mon Jan 9 00:05:09 2017 +0300
+
+    Use auto deriving for `Production` instances
+
+[33mcommit c313d9b5de38a9b6f77173c077047f6424fffbaf[m
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Sun Jan 8 19:40:23 2017 +0300
+
+    Remove bardaq with curTime redundancy
+
+[33mcommit f204cd3cbcb4dc14f1354669f97acf4a2704b7a5[m
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Sun Jan 8 19:15:44 2017 +0300
+
+    Minor: change Production logger name
+
+[33mcommit 9da8b76d3dc980bcfc70da8aaf11d1016f3a109b[m
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Sun Jan 8 16:16:17 2017 +0300
+
+    [TW-104] Restructure bench/* modules and simplify .cabal
+
+[33mcommit ff50cdd88283dd3b0662b9c95a192d648851cbdc[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sun Jan 8 15:22:50 2017 +0300
+
+    Fix ping-pong
+
+[33mcommit 03820a2a06e777078e396400c320e66bf0951f19[m
+Author: George Agapov <george.agapov@gmail.com>
+Date:   Sun Jan 8 07:36:47 2017 +0300
+
+    [CSL-447] Add hoistSendActions
+
+[33mcommit 1f4f1e6b9f17b48aa6b370604e74a2c7b99abe0b[m
+Author: George Agapov <george.agapov@gmail.com>
+Date:   Sun Jan 8 07:30:48 2017 +0300
+
+    [CSL-447] Add hoistSendActions
+
+[33mcommit 2d3d3ae30fe1d3140c7e53c96a958e157a71efb7[m
+Author: George Agapov <george.agapov@gmail.com>
+Date:   Sun Jan 8 06:26:27 2017 +0300
+
+    [CSL-447] Expose MessageName constructor
+
+[33mcommit 2a1d936e994434ec480fc261fa258b7d5c896e02[m
+Merge: 975c078 955ea0b
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sun Jan 8 05:52:57 2017 +0300
+
+    Merge branch 'fail-mask'
+
+[33mcommit 955ea0b1da9ff263e55b57428212a2b9910003d2[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sun Jan 8 05:41:12 2017 +0300
+
+    CSL-447 Add instances `MonadFail` and `MonadMask` for `Production`
+
+[33mcommit 975c07805c5a385eb33ccc8d31078a910eeb7c14[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sun Jan 8 05:22:22 2017 +0300
+
+    Revert introducing `Mockable Fail`
+
+[33mcommit da2cd08871859b3a3b0a406be246965ade0cb127[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sun Jan 8 05:01:47 2017 +0300
+
+    Fix import list indentation
+
+[33mcommit d764a25afc4d7d9198fbdb8a4359c3cc0bd3e41c[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sun Jan 8 04:51:56 2017 +0300
+
+    [CSL-447] Add `Mockable Fail`
+
+[33mcommit c237c6615dd444871e7eed055b5d7b74e0e8c67a[m
+Author: George Agapov <george.agapov@gmail.com>
+Date:   Sun Jan 8 04:04:14 2017 +0300
+
+    [CSL-447] Add Hashable NodeId
+
+[33mcommit 658776aa1b93892b2c7f3ea451cd623cb5ac2a2b[m
+Author: Denis Shevchenko <denis.shevchenko@iohk.io>
+Date:   Sat Jan 7 22:12:08 2017 +0400
+
+    [] Tests passed, a little bit lower heavy parcel's size.
+
+[33mcommit d63babedda0a71ff5b9cec58d000597df005d6dc[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sun Jan 8 00:42:56 2017 +0300
+
+    [CSL-447] Remove `RelativeToNow` and `for`
+
+[33mcommit 75f60204bb34c16a8ac50de708819aaf0d01db82[m
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Sat Jan 7 21:29:29 2017 +0300
+
+    Sanitize: fix warnings in benchmarks
+
+[33mcommit d0f28c55c1db48e179936007c6bf1448a4894a07[m
+Author: George Agapov <george.agapov@gmail.com>
+Date:   Sat Jan 7 21:12:15 2017 +0300
+
+    [CSL-447] Add waitAnyUnexceptional
+
+[33mcommit 9057ad4926f42b470b1fecaa7809d075b90cd03b[m
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Sat Jan 7 19:48:17 2017 +0300
+
+    Sanitize: fix warnings
+
+[33mcommit f647543bd0fa640b786f855a0cd9a2aa12c32a17[m
+Author: George Agapov <george.agapov@gmail.com>
+Date:   Sat Jan 7 19:21:17 2017 +0300
+
+    [CSL-447] Fix executables compilation
+
+[33mcommit 09b2723d510524b11c12c6ea31d0b9c9b95b177a[m
+Author: George Agapov <george.agapov@gmail.com>
+Date:   Sat Jan 7 18:43:05 2017 +0300
+
+    [CSL-447] Add Mockable LoggerNameBox
+
+[33mcommit 9eb2435ce8b92e649fea100b61d9f039fdaaea07[m
+Author: George Agapov <george.agapov@gmail.com>
+Date:   Sat Jan 7 11:51:18 2017 +0300
+
+    [CSL-447] Add Mockable CurrentTime
+
+[33mcommit a1e417e0584b45e0ccdee70514e3858bf94fe26e[m
+Author: George Agapov <george.agapov@gmail.com>
+Date:   Sat Jan 7 11:03:54 2017 +0300
+
+    [CSL-447] Expose Message.Message.recvNext
+
+[33mcommit 5825c5810d5bd3370cd144bc785f419537452846[m
+Author: George Agapov <george.agapov@gmail.com>
+Date:   Sat Jan 7 07:39:38 2017 +0300
+
+    Fix cabal file
+
+[33mcommit 8029c6e3b5cc682eae08c240a6f0a338d60d31b4[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sat Jan 7 06:22:36 2017 +0300
+
+    Revert TW-109 (socket states); remained `getCompanion` in `ConversationActions`
+
+[33mcommit f5aad5492a932368505ab25e3ae2df7f9c59f50f[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sat Jan 7 06:12:18 2017 +0300
+
+    Make tests pass
+
+[33mcommit 5ca0a18bfea1a022e67eef53ae1d2f5184276526[m
+Merge: b5149ab 9882eeb
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sat Jan 7 06:06:18 2017 +0300
+
+    Merge avieth/async
+
+[33mcommit b5149ab8375d832778632af5f2ac4d285f7f727f[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sat Jan 7 05:13:23 2017 +0300
+
+    Fix comment
+
+[33mcommit 1da11e5a17a959d7395301e87a74f999a27aa98f[m
+Author: George Agapov <george.agapov@gmail.com>
+Date:   Sat Jan 7 05:02:36 2017 +0300
+
+    [CSL-447] Add MFunctor' instances for all mocks
+
+[33mcommit 57acd5604706ae2a4fcded7029a0cf69d871a22b[m
+Author: George Agapov <george.agapov@gmail.com>
+Date:   Sat Jan 7 04:19:52 2017 +0300
+
+    [CSL-447] Introduce MFunctor' based Mockable instance for ReaderT
+
+[33mcommit f65d12c786c3cef371ddc87e37b6747981c4ab0a[m
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Sat Jan 7 03:10:02 2017 +0300
+
+    [CSL-447] Minor: fix some MFunctor warnings
+
+[33mcommit f14807bb57173aba7e9078b65b160b9973568e8a[m
+Author: George Agapov <george.agapov@gmail.com>
+Date:   Sat Jan 7 02:48:10 2017 +0300
+
+    [CSL-447] Add ReaderT instance for Mockable through mmorph
+
+[33mcommit 19c227309cfbe2c9637de719ecd4902aa67b6a34[m
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Sat Jan 7 02:01:18 2017 +0300
+
+    [CSL-447] Add correct ReaderT Fork mocks
+
+[33mcommit 54d2be8d7bb452dbe688645ea2934f42fb3c6020[m
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Sat Jan 7 01:41:22 2017 +0300
+
+    Revert "Merge branch 'feature/csl447-mocks'"
+    
+    This reverts commit 9def9a32335158637e48e8d161c3e9731f827d3a, reversing
+    changes made to 6b70df2c0f6f345e1382c57babeaba86974d0431.
+
+[33mcommit 9def9a32335158637e48e8d161c3e9731f827d3a[m
+Merge: 6b70df2 2f24656
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Sat Jan 7 01:34:04 2017 +0300
+
+    Merge branch 'feature/csl447-mocks'
+
+[33mcommit 2f24656e863f8470e1e89c7e7320714c5d102484[m
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Sat Jan 7 01:20:18 2017 +0300
+
+    [CSL-447] Add ReaderT instance for Fork mock
+
+[33mcommit 9882eeb0dd4014c529b98b4b10dd2cb21bc77e15[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Fri Jan 6 15:40:34 2017 -0500
+
+    Make test suite compile and go
+
+[33mcommit 9432941a6ddc543f67da12db3e951d5c0fe7554d[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Fri Jan 6 15:40:16 2017 -0500
+
+    Unexpected ACK is not an error
+    
+    See comments inline
+
+[33mcommit 6b1192207b649eac0efd08d246688da5f88abd32[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Fri Jan 6 13:24:58 2017 -0500
+
+    Mockable concurrently, mapConcurrently
+    
+    These are not trivial derivations from 'Async', so 'Concurrently' is
+    included as a Mockable primitive and 'mapConcurrently' is easily
+    derived.
+
+[33mcommit 6b70df2c0f6f345e1382c57babeaba86974d0431[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Fri Jan 6 17:58:54 2017 +0300
+
+    [TW-108] Remove redundant `msgName` argument
+
+[33mcommit 14afbd6dbd9eb5236692ae9c71acb42a68d7609c[m
+Merge: a119f40 0e6a52b
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Fri Jan 6 17:55:54 2017 +0300
+
+    Merge remote-tracking branch 'origin/master'
+
+[33mcommit a119f4094f870bc6cffb42935ab7d0d688d9c48f[m
+Merge: 22cd349 8e25b7d
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Fri Jan 6 17:53:43 2017 +0300
+
+    Merge feature/tw109-states
+
+[33mcommit 0e6a52b82c217227ace8ead44b1b0fe93f42302d[m
+Author: Ilya Peresadin <pva701@gmail.com>
+Date:   Fri Jan 6 17:23:00 2017 +0300
+
+    [TW-102] Using origin package time instead of transmit
+
+[33mcommit 22cd34991c00d0e2b604c220d14ba0c65295167b[m
+Author: Ilya Peresadin <pva701@gmail.com>
+Date:   Fri Jan 6 17:02:53 2017 +0300
+
+    [TW-102] Transmit time passed to NTP callback
+
+[33mcommit e4e24295ae6e08175bfef95da67f42dc3703c338[m
+Merge: 9415f84 2025b11
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Fri Jan 6 16:36:37 2017 +0300
+
+    Merge feature/tw108-message
+
+[33mcommit 8e25b7d877549d0b1922612b9f719647bfc2ae99[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Fri Jan 6 15:46:39 2017 +0300
+
+    [TW-109] Add simple test for connection states
+
+[33mcommit 9415f8430f11fce137b1a380542d77a6f93c42e0[m
+Author: Ilya Peresadin <pva701@gmail.com>
+Date:   Fri Jan 6 02:57:05 2017 +0300
+
+    Kademlia dependency commit updated
+
+[33mcommit 8cc1af8f183438c9e13b02b45a4c346e1a0148bc[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Thu Jan 5 16:55:59 2017 -0500
+
+    Change the type of node
+    
+    The listeners and the workers can depend upon the 'Node' value, making
+    it possible to for instance spin up a Kademlia discovery/broadcast
+    instance and use it in the listeners and main action.
+
+[33mcommit 00da6876ebb1742c516077ea57bd8fba3f091fb7[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Thu Jan 5 15:35:08 2017 -0500
+
+    No auto threading; remove time-warp dependencies
+    
+    This is supposed to be a rework of time-warp, so it should not depend
+    upon time-warp.
+    
+    Removed the 'RepeatForever' and 'SleepForever' notions because I'd like
+    to discuss them. I suspect they're just not necessary, because they can
+    be implemented in terms of other primitives.
+    
+    The use of 'Node' has been changed so that it doesn't automatically
+    thread a list of workers. Instead, you get the 'Node m' and 'SendActions m'
+    and are free to do whatever 'm' actions you want. Once your action is
+    done, the 'EndPoint' created by the low-level node is closed and
+    everything shuts down.
+
+[33mcommit 3f89efebcb13d067dee1724db32760f28404dd50[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Thu Jan 5 15:10:18 2017 -0500
+
+    Add Async mocking; return conduit to cabal file
+
+[33mcommit 18dc838631758bb33239e7cd6b171c47d07f4ed3[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Thu Jan 5 21:05:00 2017 +0300
+
+    [TW-109] Export connection states storage
+
+[33mcommit 41e12064e2eba0de7d128dae471d8d7e01499ab2[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Thu Jan 5 20:20:26 2017 +0300
+
+    Fix some warnings
+
+[33mcommit b10277d1169fba9f02fec37f578e47741753c7f3[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Thu Jan 5 19:50:48 2017 +0300
+
+    Fix build of benchmarks
+
+[33mcommit cde3cc04df181bf329865c9faf74e9a887b8d7b9[m
+Merge: b3f1826 463d0ca
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Thu Jan 5 19:43:51 2017 +0300
+
+    Merge feature/csl447-new-tw-timed
+
+[33mcommit b3f182668f50bde3e8754028820f63e2abee9e20[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Thu Jan 5 11:13:58 2017 -0500
+
+    Remove unused imports, dependencies
+
+[33mcommit 7026c365e090b2b0b254512055535b80f05add6b[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Thu Jan 5 18:48:01 2017 +0300
+
+    Put chunks to channel within one pack
+    As far as I understand, this is required for https://github.com/serokell/tw-rework-sketch/pull/7
+
+[33mcommit 2025b11a079e9e6d264f8a722ce91327da1ae117[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Thu Jan 5 18:18:31 2017 +0300
+
+    [TW-108] Add `Message` typeclass, don't specify message name manually
+
+[33mcommit b128e8af9194bfcc8cdbc175245d076da45647d8[m
+Merge: fe7dcd4 0bc6268
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Thu Jan 5 17:22:51 2017 +0400
+
+    Merge pull request #7 from serokell/avieth/nt-parsing-empty
+    
+    Concatenate chunks before attempting to parse
+
+[33mcommit 0bc626871f1a0bff76bab61e34094a26806abe28[m
+Merge: bedaee3 fe7dcd4
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Thu Jan 5 16:52:42 2017 +0400
+
+    Merge branch 'master' into avieth/nt-parsing-empty
+
+[33mcommit 463d0caec09c4f6889871a7f91d1b2dfc89a1b95[m
+Author: Denis Shevchenko <denis.shevchenko@iohk.io>
+Date:   Thu Jan 5 10:51:35 2017 +0400
+
+    [] Fix simple warnings in examples.
+
+[33mcommit 0a02641d331b6cb1577d1f81e37fb700548d5183[m
+Author: Denis Shevchenko <denis.shevchenko@iohk.io>
+Date:   Sat Dec 31 17:42:52 2016 +0400
+
+    [CSL-447] Small PingPong example fixes.
+
+[33mcommit 4e5ebadd141d51c8149653f5a43091145bebde1f[m
+Author: Denis Shevchenko <denis.shevchenko@iohk.io>
+Date:   Sat Dec 31 12:41:13 2016 +0400
+
+    [CSL-447] Small Mockable-fixes.
+
+[33mcommit c11b6d91dbdf3ec71dacb25db13bb81f792024a9[m
+Author: Denis Shevchenko <denis.shevchenko@iohk.io>
+Date:   Sat Dec 31 03:27:33 2016 +0400
+
+    [CSL-447] Tests fixed.
+
+[33mcommit 80f0ef39737df1069b1584a0e53a2da7d3d21dc2[m
+Author: Denis Shevchenko <denis.shevchenko@iohk.io>
+Date:   Fri Dec 30 14:33:36 2016 +0400
+
+    [CSL-447] sleepForever and repeatForever, Mockable-versions.
+
+[33mcommit 10b0391a226a94d86dc744c65490c3d42d16e3de[m
+Author: Denis Shevchenko <denis.shevchenko@iohk.io>
+Date:   Wed Dec 28 12:01:10 2016 +0400
+
+    [CSL-447] MonadMockable constraints
+
+[33mcommit db92b988989062e0ea68408e3ab8d5c5ac02be92[m
+Author: Denis Shevchenko <denis.shevchenko@iohk.io>
+Date:   Wed Dec 28 02:07:15 2016 +0400
+
+    [CSL-447] wait instead of delay
+
+[33mcommit a44701cf6ab26ce4d5fab2776c5d079a00076529[m
+Author: Denis Shevchenko <denis.shevchenko@iohk.io>
+Date:   Tue Dec 27 19:48:01 2016 +0400
+
+    [CSL-447] Older version of Kademlia, from current pos.
+
+[33mcommit fe7dcd42dd7f43020d923193432b2885a08deda4[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Thu Jan 5 06:27:54 2017 +0300
+
+    Removed `toProcess` from parcel
+    This field is useless since headers are not supported
+
+[33mcommit 073dcbd36cef7786daa3c39a30b08280166481e8[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Thu Jan 5 06:26:41 2017 +0300
+
+    Set initial `activeWorkers` in `deliveryTest`
+
+[33mcommit d25157038ec2edfa9699556d3447d1d30ed78d7c[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Thu Jan 5 06:08:32 2017 +0300
+
+    [TW-109] Add socket state support
+
+[33mcommit 149fcbcf036b1e43abbb64187412f9744fd1089c[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Thu Jan 5 04:48:49 2017 +0300
+
+    [TW-107] Remove headers support
+
+[33mcommit c9cb89b2e03dcd71a525fab65748b0e9bb781a8c[m
+Merge: 40e89d4 d426410
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Thu Jan 5 03:09:14 2017 +0300
+
+    Merge feature/tw102-ntp
+
+[33mcommit d4264100ca352d1fd24202de369cfcd6a18d88e8[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Thu Jan 5 03:06:27 2017 +0300
+
+    [TW-102] Replace `sendManyTo` with `sendTo`
+
+[33mcommit 40e89d49fb124e6ad0367e9f34ceecd852241acc[m
+Merge: 03d7f23 4bbea0c
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Thu Jan 5 02:46:22 2017 +0300
+
+    [TW-100] Merge feature/tw100-headers
+
+[33mcommit bedaee31853c0c74ec8486bf643d11015c38278d[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Tue Jan 3 10:40:14 2017 -0500
+
+    Concatenate chunks before attempting to parse
+    
+    This is the one true way. See the discussion here:
+    https://github.com/haskell-distributed/network-transport-tcp/pull/44
+    
+    network-transport only guarantees that
+    `concat sentChunks == concat receivedChunks`
+    which neatly handles the case of `[]` as `concat [] = ""`.
+
+[33mcommit 572ea44410b6ad35a7619743439cb92a8ee473a7[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sat Dec 31 18:47:57 2016 +0300
+
+    [TW-102] Fix import list
+
+[33mcommit 16c9535908836a04f5ac132dcfba5490c950f85a[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sat Dec 31 18:45:53 2016 +0300
+
+    [TW-102] Prettify code
+
+[33mcommit 07a47e9f0293cb70a3b45992744663958612d3ff[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sat Dec 31 03:22:25 2016 +0300
+
+    [TW-102] Improve logging
+
+[33mcommit 103e6b417fe8a3ee995ba3a7c39f6dba767ec70b[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sat Dec 31 03:15:49 2016 +0300
+
+    [TW-102] Use smart "clock offset" formula
+
+[33mcommit db396d83642ee4202c01a74e2848bdfa49083fe7[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sat Dec 31 02:14:57 2016 +0300
+
+    [TW-102] Sumarize responses
+
+[33mcommit 4bbea0cfcbcaa5f8e11acfb3782a178b5364644c[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sat Dec 31 00:34:13 2016 +0300
+
+    [TW-100] Repost error if body in raw form contains extra symbols at end
+
+[33mcommit c05ae15a485f0c43e1a4a3ca5f37ea6e03215732[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sat Dec 31 00:17:57 2016 +0300
+
+    Fix benchmarks building
+
+[33mcommit 8ac03a0837937ea7b3b475f9820b711e450b7c46[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sat Dec 31 00:07:54 2016 +0300
+
+    [TW-100] Add payload test
+    Send 100kb messages to ensure correct deserialization
+
+[33mcommit deb6b7835bdf076c6a4b2de1fc52c966134662d7[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Fri Dec 30 23:10:48 2016 +0300
+
+    [TW-100] Invoke prelistener even if no listener matched name of incoming message
+    With no prelistener support for conversation style though
+
+[33mcommit 6e728d602cf757a7d62a73a3aa810e67a9a3c76b[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Fri Dec 30 21:59:23 2016 +0300
+
+    [TW-100] Some documentation
+
+[33mcommit aaa364deb09785932e8a46c11209ac61e292ef27[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Fri Dec 30 21:41:49 2016 +0300
+
+    [TW-100] Fix serialization
+
+[33mcommit 18397cd53fac41c6f5d6a6059f33529d10767f4c[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Thu Dec 29 15:55:14 2016 +0300
+
+    [TW-102] Add some fields to ntp packet, fix time deserialisation
+
+[33mcommit cce87ef5be0028a7974052f62d3b73d2535622f9[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Thu Dec 29 14:49:16 2016 +0300
+
+    [TW-102] Increase reliability
+    Recover on error in `mkSocket`
+    Handle error in `resolveHost`
+
+[33mcommit 737df62e1f5427b90b32230cf48b39752fbef0f4[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Thu Dec 29 03:05:49 2016 +0300
+
+    [TW-102] Report delta time intead of server-returned time
+
+[33mcommit 5d87c92fd81dbebf789dca6e77f50062f5957f98[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Thu Dec 29 02:57:18 2016 +0300
+
+    [TW-102] Introduced monad stack
+
+[33mcommit e12a26f61974cb3a5556979c1fbec8d2ccc9db33[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Thu Dec 29 01:53:06 2016 +0300
+
+    Try use monad stack
+
+[33mcommit 0fcb2d8f166352178ecdf4944c0956bdcb5ff7d8[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Tue Dec 27 23:16:34 2016 +0300
+
+    [TW-100] Try conduits
+
+[33mcommit 892330a8e07c9a230de16ade70dc317e90a08bbf[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Wed Dec 28 22:38:05 2016 +0300
+
+    [TW-102] Make NTP client prototype
+
+[33mcommit 03d7f237438937eddf7b1982fe91ff3496028923[m
+Merge: a432101 c3939aa
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Wed Dec 28 12:24:57 2016 +0300
+
+    Merge branch 'fix/tw101-bench'
+
+[33mcommit c3939aaf1df2479d0c9a60c83de3eb402c10ed55[m
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Wed Dec 28 02:45:40 2016 +0300
+
+    [TW-101] Minor: increase duration of waiting for peers
+
+[33mcommit a362c4bb77d4c45d5e702c0d5626d7e46b718eb8[m
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Wed Dec 28 00:50:52 2016 +0300
+
+    [TW-101] Fix -r option & refactor sender
+
+[33mcommit a432101a1fe8cc3f351db2b603f26f7d53831e1f[m
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Tue Dec 27 20:38:47 2016 +0300
+
+    Minor: add .log files to gitignore
+
+[33mcommit f32820280974bf12d1201026f7c8168450bd62c7[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Tue Dec 27 18:43:28 2016 +0300
+
+    [TW-100] Start messaging, try unpackMsg with channel
+
+[33mcommit f415dbfec2afa3a0bd554c916ca6a09851c31151[m
+Merge: 9194a78 2621121
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Tue Dec 27 15:48:13 2016 +0400
+
+    Merge pull request #6 from denisshevchenko/master
+    
+    [TW-97] Little additions in README and PingPong example.
+
+[33mcommit 26211210af38cef60c5700b3e1349a1da9c72a23[m
+Author: Denis Shevchenko <me@dshevchenko.biz>
+Date:   Tue Dec 27 14:01:09 2016 +0400
+
+    [] Little additions in README and PingPong example.
+
+[33mcommit 9194a78a2cbcbd82086ae8912435809f4047125a[m
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Tue Dec 27 03:30:26 2016 +0300
+
+    [TW-101] Update launch script for multiple peers
+
+[33mcommit 059bac2861806d7b314421449ccb8c679df6fbe8[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Tue Dec 27 03:07:30 2016 +0300
+
+    [TW-100] Fix CI build
+    Increased delays in test
+
+[33mcommit d712ab9a3ffda2bf1605d59976db82b5c84ac9de[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Tue Dec 27 02:10:20 2016 +0300
+
+    [TW-103] Fix bug in conversation style
+    When `recvNext` extracted entry which is "" in serialized form (there is a warning about this case), then "" is put back to input channel, and after this if connection closes `NoParse` is returned instead of `End`
+
+[33mcommit 32c281c8b3de4788726d65ca600563cffd6c58ec[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Mon Dec 26 06:34:45 2016 +0300
+
+    [TW-100] Enable usage of prelistener
+
+[33mcommit 7d26206470c96fff27ee84b09358a7ea9f66dd7d[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Mon Dec 26 07:24:22 2016 +0300
+
+    [TW-100] Add test on prelistener
+
+[33mcommit 80e63620020e16a068c9b001a689dca6c7a1bd59[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sun Dec 25 23:07:02 2016 +0300
+
+    [TW-100] Write first test
+
+[33mcommit 478e335bdffdacd3f2cf52740714d17677455981[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sun Dec 25 21:47:37 2016 +0300
+
+    [TW-100] Remove debug, precede message body with its length
+
+[33mcommit 166a2d337c1b8bb1dd166f5bb983d3be5c0d399a[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sun Dec 25 17:51:56 2016 +0300
+
+    [TW-100] Force using same header type in all related places (in upper layer)
+
+[33mcommit dfb4f656d2cd088cf843acb8cb6c0e15ef66fd1e[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Sun Dec 25 17:36:16 2016 +0300
+
+    [TW-100] Add headers to messages
+
+[33mcommit 152625804ebb8c38033ae92228fb3ddbe5955e76[m
+Merge: 48b4f25 1efa7b9
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Fri Dec 23 17:01:24 2016 -0500
+
+    Merge pull request #5 from serokell/feature/tw98-bench
+    
+    Simple ping/pong benchmarking
+
+[33mcommit 1efa7b92031734cbbe16cf80c64350162b697f9e[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Fri Dec 23 16:35:59 2016 -0500
+
+    Do not track the logs and csv
+
+[33mcommit 12de2e79e261d811dc4bafc878ea4fd912908e1a[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Fri Dec 23 16:35:29 2016 -0500
+
+    Establish drone connections
+
+[33mcommit 0817fc50b41a53e66feded12e8d6c96cbe73279c[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Fri Dec 23 16:35:08 2016 -0500
+
+    Start a node using an EndPoint, not a transport
+    
+    Also remove InMemory discovery from cabal, as it requires a patch to
+    network-transport-inmemory
+    
+    This was added in a rebase, and is really not relevant. Sorry
+
+[33mcommit 78a196910e60df268c9abbe54a9bc65d25a5a593[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Fri Dec 23 00:34:20 2016 +0300
+
+    Revert "Revert "[CSL-356] Fix bench receiver""
+    
+    This reverts commit f3dcf658fc72db236eac2087f4d70d3f02bf0704.
+
+[33mcommit f4eb166be923bebad13341bd785124423cc659af[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Thu Dec 22 22:55:46 2016 +0300
+
+    Revert "[CSL-356] Fix bench receiver"
+    
+    This reverts commit 1e8d1c6c8d7a69ef5ab5b2746b730fbe89dece46.
+
+[33mcommit 092d6be46bf76a220aa5a063474be218ea705c79[m
+Author: George Agapov <george.agapov@gmail.com>
+Date:   Thu Dec 22 15:20:17 2016 +0300
+
+    [CSL-356] Fix bench receiver
+
+[33mcommit 9fb517e2712f19aa37b490be670059efcb725f3b[m
+Author: George Agapov <george.agapov@gmail.com>
+Date:   Thu Dec 22 15:09:50 2016 +0300
+
+    [CSL-356] Fix bench receiver
+
+[33mcommit b74827cbd877b2098797da4bc70eed5581b5318b[m
+Author: George Agapov <george.agapov@gmail.com>
+Date:   Thu Dec 22 01:17:19 2016 +0300
+
+    [CSL-356] Change license
+
+[33mcommit 5162b0df9469acb74493177d482e979432ee00f2[m
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Wed Dec 21 23:39:58 2016 +0300
+
+    [TW-98] Minor: remove warning in benchs
+
+[33mcommit 95c989813fd22eefa49be3d60d9d70f4f4d0cbb6[m
+Author: George Agapov <george.agapov@gmail.com>
+Date:   Wed Dec 21 22:54:30 2016 +0300
+
+    [CSL-356] Enable 'benchmarks' flag by default
+
+[33mcommit 1f789a4ad391a49acd96047aa718de19435c09f7[m
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Tue Dec 20 23:59:27 2016 +0300
+
+    [TW-98] Fix compilation of flag:benchmarks
+
+[33mcommit 7ac7d5c3be3b0f5c06e114b369f876fb28b72a99[m
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Tue Dec 20 21:20:19 2016 +0300
+
+    [TW-98] Fix ping-pong compilation
+
+[33mcommit 575198fcb797c08256bed0581de2417ecfd33b71[m
+Author: Konstantin Ivanov <Martoon_00@mail.ru>
+Date:   Mon Dec 19 14:10:58 2016 +0300
+
+    Remove extra todo
+
+[33mcommit 060cedf2ad4b204702eeeeeadc6d4bfdd2dfe7f1[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Mon Dec 19 08:27:51 2016 +0300
+
+    [TW-98] Fix warnings
+
+[33mcommit 946269426963621c1d04670d47e1ea7b7e28a5ca[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Mon Dec 19 08:21:30 2016 +0300
+
+    Don't build benchs by default
+
+[33mcommit 3002089914f6e86e9ee690bbc57d217b5a89136c[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Mon Dec 19 07:49:41 2016 +0300
+
+    [TW-98] Add simple benchs
+
+[33mcommit 48b4f2508abe21c5fffd9deac396b3dd57ad166c[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Fri Dec 23 16:35:08 2016 -0500
+
+    Start a node using an EndPoint, not a transport
+
+[33mcommit bf0d94fb9e7b4c60859a41690dbdaee043629c32[m
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Thu Dec 22 16:37:17 2016 +0300
+
+    [TW-97] Minor: fix building for discovery example
+
+[33mcommit 4aa8191834e49055225feec884c7863173b7a20c[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Wed Dec 21 16:04:25 2016 -0500
+
+    Fix/Update Discovery example
+    
+    Kademlia was somewhat silently failing whenever there were nodes using
+    ids of different sizes (bit lengths).
+    
+    Now the discovery example runs in constant memory even for 50 nodes on a
+    single machine (have not tested any higher values).
+
+[33mcommit 36301eaf15607ab42521d193e4b4add8f931fbb7[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Wed Dec 21 15:57:35 2016 -0500
+
+    DeriveGeneric pragma in Kademlia.hs
+
+[33mcommit b1689278baf405d7423cb0b5473a53b43ce8e7b5[m
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Wed Dec 21 21:45:59 2016 +0300
+
+    [TW-97] Minor: update kademlia version
+
+[33mcommit 3603933fb3fc8cc0a95c2c1c310228f7691cfacf[m
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Wed Dec 21 21:42:49 2016 +0300
+
+    [TW-97] Add 'discovery' executable into .cabal
+
+[33mcommit 37902c7e222446333b0e97fbafe29972ef8e5868[m
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Wed Dec 21 21:40:56 2016 +0300
+
+    [TW-97] Make modules compilable + fix .cabal/stack
+
+[33mcommit b45767e5d556914773469245ce436bf05a0406d3[m
+Merge: bbfd3d9 7eea4f0
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Wed Dec 21 22:14:00 2016 +0400
+
+    Merge pull request #4 from serokell/avieth/discovery
+    
+    Avieth/discovery
+
+[33mcommit 7eea4f06b17757ada7d07eaa08851615e5f665e3[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Wed Dec 21 09:45:39 2016 -0500
+
+    newtype for Nonce
+    
+    This is good because network-transport's 'ConnectionId' is a type
+    synonym for 'Word64', and we don't want to confuse 'ConnectionId' with
+    'Nonce', as they are both used in the 'NodeState's list of finished
+    handlers.
+
+[33mcommit aa162e4844628391f853ab8b0c53e843d83aafba[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Tue Dec 20 18:18:24 2016 -0500
+
+    Node: factor out send actions, conversation actions
+
+[33mcommit b685051b052c537e3340900607873758b768a913[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Tue Dec 20 18:01:11 2016 -0500
+
+    Node.Internal: cleanup, trim exports
+
+[33mcommit 4616eb10aa9ecd13bb07cd782d22d1a62c56a891[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Tue Dec 20 17:49:33 2016 -0500
+
+    Factor out finishHandler
+
+[33mcommit 3711e2b580d89a992b57b7b92ecf251569de231f[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Tue Dec 20 17:36:41 2016 -0500
+
+    Record for NodeState; recv signals end of input
+
+[33mcommit 151469a1006d1ebc9e7523d7af0b678c62ac57fd[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Tue Dec 20 16:06:31 2016 -0500
+
+    Discovery uses conversation for real PING/PONG
+
+[33mcommit 40928b251497cb5471bf00ae9b56bfd5b6a24942[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Tue Dec 20 15:58:54 2016 -0500
+
+    Mockable.Production with typical IO Mockables
+
+[33mcommit e7e11264d6ba3cb2ce4580a7a98a3460646009c7[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Tue Dec 20 15:55:25 2016 -0500
+
+    More comments/docs in Kademlia.hs
+
+[33mcommit 977f47de4fe71161ebc91588755934339cc23631[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Mon Dec 19 22:04:26 2016 -0500
+
+    Bidirectional connections (conversations) working
+    
+    The ping/pong example is now really ping/pong.
+
+[33mcommit 9a975f93ed04edc9222e1531648ae4654f89e30d[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Fri Dec 16 14:30:07 2016 -0500
+
+    Dispatcher: use SharedAtomic for finished threads
+    
+    Also report exceptions in threads. See a note in-line about
+    interruptibility. The burden really lies on the choice of
+    interpreteation of SharedAtomic.
+    
+    Also remove some mdo's in favour of explicit rec.
+
+[33mcommit 30cf6d84a1227f5e5ae0202465c1b079fab13279[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Thu Dec 15 21:33:46 2016 -0500
+
+    Fix leak, prototype of a NetworkDiscovery abstraction
+    
+    Quick fix to dispatcher so that the state map doesn't grow without
+    bound. It's a naive solution: clean up all finished threads and then
+    receive. It's probably not ideal for throughput.
+    
+    NetworkDiscovery:
+    
+    Find an InMemory instantiation (which requires a patch to
+    network-transport-inmemory that's up as a pull request currently) as
+    well as one backed by Kademlia. There's also an example where you can
+    spin up locally as many nodes as you want. They'll use a TCP transport
+    and Kademlia to discover each-other's end point addresses and then send
+    pings at random intervals.
+
+[33mcommit bbfd3d930100f38c0328f3798e276dd5c7dac2b5[m
+Author: Martoon <Martoon_00@mail.ru>
+Date:   Wed Dec 21 05:27:37 2016 +0300
+
+    Add travis.yml
+
+[33mcommit 2a3bf31d3000d2e57d74ec48f116458c24edf5fd[m
+Merge: 9e33825 e190f70
+Author: George Agapov <george.agapov@gmail.com>
+Date:   Tue Dec 20 15:09:55 2016 +0400
+
+    Merge pull request #1 from serokell/avieth/abstract_m
+    
+    Abstract Node over some monad
+
+[33mcommit e190f706f1a959259817e16974d109b2226e221c[m
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Sat Dec 17 01:24:44 2016 +0300
+
+    [TW-97] Add ping-pong executable target to .cabal & stack.yaml
+
+[33mcommit c890aad156060c523bebffbe7d1d7acff383c53b[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Fri Dec 16 14:37:35 2016 -0500
+
+    Remove RunInUnboundThread constraint
+    
+    Following suggestion from dcoutts.
+
+[33mcommit a394f9cd4bd73c1a321fb4af6d60ab6845cd5efd[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Fri Dec 16 13:56:35 2016 -0500
+
+    Special g -> StdGen in dispatcher
+    
+    It's not necessary, but it's more informative.
+
+[33mcommit b0a1834561aaf87cbe5a656e28f8abd09e331a1e[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Fri Dec 16 13:40:01 2016 -0500
+
+    Remove another mdo in favour of rec
+
+[33mcommit fbb4dd08e2208b1f7d9c905d4ca1b2f8e0469f6c[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Fri Dec 16 13:37:07 2016 -0500
+
+    Use StdGen; rec instead of mdo
+
+[33mcommit e6ccea4fcd0bc43e049a0254689f0ae45dbbb413[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Thu Dec 15 17:31:23 2016 -0500
+
+    PingPong example
+    
+    You can run it with inmemory or tcp transports.
+
+[33mcommit d21a81c2be4ad1ac8245fe6418f4b9d650695bb1[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Thu Dec 15 17:31:03 2016 -0500
+
+    Partial implementation of listener dispatch
+
+[33mcommit fa12a06608e99da47e696c7b449f8ed792022293[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Thu Dec 15 15:27:06 2016 -0500
+
+    Use concrete network transport for any MonadIO
+
+[33mcommit 11552a217a42620beece441b1db6539760452aa0[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Thu Dec 15 14:22:27 2016 -0500
+
+    Node is abstracted over some monad m
+    
+    Every non-pure piece of the puzzle appears as a typeclass constraint.
+    This will allow us to use the same program text for simulation and for
+    production just by choosing a different monad.
+
+[33mcommit ff477f5322e88beb7f6e03b1f33ce613eecfa415[m
+Author: Alexander Vieth <aovieth@gmail.com>
+Date:   Thu Dec 15 12:59:22 2016 -0500
+
+    Bring in Network.Transport from network-transport
+    
+    Stripped away multicast stuff and abstracted it all over some monad.
+
+[33mcommit 9e33825d908d0bccd2275a19c4688d03e98cfbf2[m
+Author: Duncan Coutts <duncan@well-typed.com>
+Date:   Thu Dec 15 15:01:50 2016 +0000
+
+    Extend sketch to cover bi-directional channels
+
+[33mcommit 1f4bc2091710bd8983e6f390de1f532b52e54bcc[m
+Merge: 34b4600 2cc8215
+Author: Duncan Coutts <duncan@well-typed.com>
+Date:   Wed Dec 14 20:37:42 2016 +0000
+
+    Merge github.com:serokell/tw-rework-sketch
+
+[33mcommit 2cc82150c1a1375df8508d402189da0a7b9fdd12[m
+Author: Dmitry Kovanikov <kovanikov@gmail.com>
+Date:   Thu Dec 15 00:24:44 2016 +0400
+
+    Initial commit
+
+[33mcommit 34b46000e54849133167d5a63f0a7071d300c094[m
+Author: Duncan Coutts <duncan@well-typed.com>
+Date:   Mon Dec 12 16:18:21 2016 +0000
+
+    Add a few more notes and TODOs
+
+[33mcommit 98545844931beaab03f4713e0b0ba81c7f56f795[m
+Author: Duncan Coutts <duncan@well-typed.com>
+Date:   Mon Dec 12 15:00:28 2016 +0000
+
+    Initial hacking on sketch of IOHK's PoS application

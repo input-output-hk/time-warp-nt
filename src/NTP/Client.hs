@@ -33,7 +33,7 @@ import           Data.Word                   (Word16)
 import           Formatting                  (sformat, shown, (%))
 import           Network.Socket              (AddrInfoFlag (AI_PASSIVE), Family (AF_INET),
                                               SockAddr (..), Socket,
-                                              SocketOption (ReuseAddr),
+                                              SocketOption (ReuseAddr, ReusePort),
                                               SocketType (Datagram), addrAddress,
                                               addrFamily, addrFlags, bind, close,
                                               defaultHints, defaultProtocol, getAddrInfo,
@@ -187,6 +187,7 @@ mkSocket settings = doMkSocket `catchAll` handlerE
 
         sock <- socket (addrFamily serveraddr) Datagram defaultProtocol
         setSocketOption sock ReuseAddr 1
+        setSocketOption sock ReusePort 1
         bind sock (addrAddress serveraddr)
         return sock
     handlerE e = do
